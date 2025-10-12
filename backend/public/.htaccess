@@ -1,0 +1,14 @@
+RewriteEngine On
+RewriteBase /project/backend/public/
+
+RewriteCond %{HTTP_USER_AGENT} (googlebot|bingbot|yandex|baiduspider|facebookexternalhit|twitterbot|linkedinbot) [NC]
+RewriteCond %{REQUEST_URI} !\.(js|css|xml|png|jpg|jpeg|gif|pdf|txt|ico|zip|webp)$ [NC]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ https://service.prerender.io/https://yourdomain.com/project/backend/public/$1 [P,L,E=PRERENDER_TOKEN:9OyivQX988oJ5EUO6NAt]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+RewriteRule ^(.*)$ index.php [L,QSA]
