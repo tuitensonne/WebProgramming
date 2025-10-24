@@ -1,35 +1,24 @@
-import { Button, Typography, Container } from "@mui/material";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import LandingPage from "./Pages/LandingPage";
+
+const theme = createTheme({
+  typography: {
+    fontFamily: `"Roboto", "Helvetica", "Arial", sans-serif`,
+  },
+});
 
 function App() {
   return (
-    <Container
-      maxWidth={false}
-      disableGutters
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center", 
-        alignItems: "center", 
-        textAlign: "center",
-        minHeight: "100vh",    
-        width: "100vw",        
-        backgroundColor: "red",
-        boxSizing: "border-box",
-      }}
-    >
-      <Typography variant="h3" gutterBottom color="white">
-        Chào mừng đến với React + Material UI 🚀
-      </Typography>
-      <Button 
-        variant="contained" 
-        sx={{backgroundColor: "white",
-          color: "black",
-          fontWeight: "700"
-        }}
-      >
-        Nhấn vào tôi
-      </Button>
-    </Container>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />  
+
+      <Router>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 
