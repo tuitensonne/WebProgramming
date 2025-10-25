@@ -3,9 +3,7 @@ import { createTheme } from "@mui/material/styles";
 
 const theme = createTheme({
   typography: {
-    fontFamily: "'Inter', 'Roboto', 'Helvetica Neue', Arial, sans-serif",
-    fontSize: 16, // 1rem = 16px
-    htmlFontSize: 16,
+    fontFamily: `"Roboto", "Helvetica", "Arial", sans-serif`,
   },
 
   shape: {

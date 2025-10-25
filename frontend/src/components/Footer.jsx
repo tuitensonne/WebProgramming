@@ -8,7 +8,7 @@ import {
   IconButton,
   Container,
 } from "@mui/material";
-import { styled } from "@mui/system";
+import { styled, textAlign } from "@mui/system";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import TwitterIcon from "@mui/icons-material/Twitter";
@@ -40,9 +40,25 @@ const NewsletterInput = styled(TextField)({
 export default function Footer() {
   return (
     <FooterWrapper>
-      <Container maxWidth="lg" disableGutters sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
-        <Grid container spacing={{ xs: 4, md: 6 }}>
-          <Grid item xs={12} sm={6} md={3} sx={{ textAlign: { xs: "center", md: "left" } }}>
+      <Container
+        maxWidth="lg"
+        disableGutters
+        sx={{
+          px: { xs: 2, sm: 4, md: 6 },
+        }}
+      >
+        <Grid
+          container
+          spacing={{ xs: 4, md: 6 }}
+          sx={{
+            flexDirection: { xs: "column", md: "row" }, 
+            alignItems: { xs: "center", md: "flex-start" }, 
+            justifyContent: { xs: "center", md: "space-between" }, 
+            textAlign: { xs: "center", md: "left" }, 
+          }}
+        >
+          {/* === Cột 1 === */}
+          <Grid item xs={12} sm={6} md={3}>
             <Typography
               variant="h5"
               sx={{
@@ -92,10 +108,20 @@ export default function Footer() {
             </Box>
           </Grid>
 
-          <Grid item xs={6} sm={6} md={2}>
+          <Grid
+            item
+            xs={6}
+            sm={6}
+            md={2}
+            sx={{ textAlign: { xs: "center", md: "left" } }}
+          >
             <Typography
               variant="h6"
-              sx={{ fontWeight: 700, mb: 2, fontSize: { xs: "1rem", md: "1.1rem" } }}
+              sx={{
+                fontWeight: 700,
+                mb: 2,
+                fontSize: { xs: "1rem", md: "1.1rem" },
+              }}
             >
               Company
             </Typography>
@@ -120,10 +146,20 @@ export default function Footer() {
             ))}
           </Grid>
 
-          <Grid item xs={6} sm={6} md={2}>
+          <Grid
+            item
+            xs={6}
+            sm={6}
+            md={2}
+            sx={{ textAlign: { xs: "center", md: "left" } }}
+          >
             <Typography
               variant="h6"
-              sx={{ fontWeight: 700, mb: 2, fontSize: { xs: "1rem", md: "1.1rem" } }}
+              sx={{
+                fontWeight: 700,
+                mb: 2,
+                fontSize: { xs: "1rem", md: "1.1rem" },
+              }}
             >
               Destinations
             </Typography>
@@ -181,7 +217,7 @@ export default function Footer() {
               />
               <Button
                 variant="contained"
-                fullWidth
+                minWidth
                 sx={{
                   borderRadius: { xs: "8px", sm: "0 8px 8px 0" },
                   backgroundColor: "#E4714E",
