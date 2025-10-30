@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import axios from "axios";
+
 import {
   Box,
   InputBase,
@@ -14,6 +14,7 @@ import {
   ArrowForwardIos as ArrowForwardIosIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
+import api from "../api/api";
 
 const SearchContainer = styled(Box)(() => ({
   position: "relative",
@@ -91,14 +92,9 @@ const Thumbnail = () => {
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        // const res = await axios.get("http://localhost:3000/api/banners"); 
-        setImages([
-  "https://picsum.photos/1920/1080?random=1",
-  "https://picsum.photos/1920/1080?random=2",
-  "https://picsum.photos/1920/1080?random=3",
-  "https://picsum.photos/1920/1080?random=4",
-  "https://picsum.photos/1920/1080?random=5"
-]);
+        const res = await api.get("banners/list");
+        console.log("Banner response:", res); 
+        setImages(res.data.data.map((banner) => banner.url));
       } catch (err) {
         console.error("Lỗi tải banner:", err);
       } finally {
