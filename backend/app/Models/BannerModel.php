@@ -31,7 +31,14 @@ class BannerModel
 
     public function getAll()
     {
-        $stmt = $this->db->query("SELECT * FROM BannerHomePage ORDER BY id DESC");
+        $sql = "
+            SELECT * 
+            FROM BannerHomePage
+            WHERE dayEnd >= CURDATE()
+            ORDER BY dayStart DESC
+            LIMIT 5
+        ";
+        $stmt = $this->db->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

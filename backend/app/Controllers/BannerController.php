@@ -10,9 +10,11 @@ class BannerController extends Controller
     /**
      * Upload ảnh banner --> lưu S3 --> lưu DB --> trả URL
      */
+    /**
+     * Thiếu middleware để check quyền
+     */
     public function create()
     {
-        // Kiểm tra file upload
         if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
             return $this->error('Missing or invalid image file', 400);
         }
@@ -20,7 +22,6 @@ class BannerController extends Controller
         try {
             $file = $_FILES['image'];
 
-            // Gọi S3Service Singleton
             $s3Service = S3Service::getInstance();
             $uploadResult = $s3Service->upload($file, 'banners/');
 
@@ -30,18 +31,21 @@ class BannerController extends Controller
 
             $s3Url = $uploadResult['url'];
 
-            // Lưu thông tin banner vào DB
+            $dayStart = $_POST['dayStart'] ?? date('Y-m-d');
+            $dayEnd = $_POST['dayEnd'] ?? date('Y-m-d', strtotime('+30 days'));
+
             $bannerModel = new BannerModel();
             $bannerId = $bannerModel->create([
                 'url' => $s3Url,
-                'dayStart' => date('Y-m-d'),
-                'dayEnd' => date('Y-m-d', strtotime('+30 days')), 
+                'dayStart' => $dayStart,
+                'dayEnd' => $dayEnd,
             ]);
 
-            // Trả về kết quả
             return $this->success([
                 'id' => $bannerId,
-                'url' => $s3Url
+                'url' => $s3Url,
+                'dayStart' => $dayStart,
+                'dayEnd' => $dayEnd
             ], 'Banner created successfully');
 
         } catch (\Exception $e) {
@@ -67,12 +71,13 @@ class BannerController extends Controller
     /**
      * Xóa banner (và file trên S3)
      */
-    public function delete()
+    /**
+     * Thiếu middleware để check quyền
+     */
+    public function delete($id)
     {
-        $id = $this->getPathParam(2);
-
-        if (!$id) {
-            return $this->error('Missing banner ID', 400);
+        if (!$id || !is_numeric($id)) {
+            return $this->error('Invalid banner ID', 400);
         }
 
         try {
@@ -83,11 +88,15 @@ class BannerController extends Controller
                 return $this->error('Banner not found', 404);
             }
 
-            // Xóa file trên S3
+            // Xóa file khỏi S3
             $s3Service = S3Service::getInstance();
-            $s3Service->deleteByUrl($banner['url']);
+            $deleted = $s3Service->deleteByUrl($banner['url']);
 
-            // Xóa bản ghi DB
+            if (!$deleted) {
+                return $this->error('Failed to delete file from S3', 500);
+            }
+
+            // Xóa record trong DB
             $bannerModel->delete($id);
 
             return $this->success(null, 'Banner deleted successfully');

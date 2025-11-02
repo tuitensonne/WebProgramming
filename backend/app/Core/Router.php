@@ -17,6 +17,10 @@ class Router {
         $this->routes['POST'][$path] = $callback;
     }
 
+    public function delete($path, $callback) {
+        $this->routes['DELETE'][$path] = $callback;
+    }
+
     public function dispatch() {
         $method = $_SERVER['REQUEST_METHOD'];
         $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -27,25 +31,36 @@ class Router {
 
         if (empty($uri)) $uri = '/';
 
-        error_log("METHOD: $method | URI: $uri | BASE: {$this->basePath}");
-
         if (isset($this->routes[$method][$uri])) {
             $callback = $this->routes[$method][$uri];
+            $this->invoke($callback);
+            return;
+        }
 
-            if (is_array($callback)) {
-                [$class, $methodName] = $callback;
-                $controller = new $class();
-                $controller->$methodName();
-            } else {
-                call_user_func($callback);
+        foreach ($this->routes[$method] ?? [] as $path => $callback) {
+            $pattern = preg_replace('#\{[^/]+\}#', '([^/]+)', $path);
+            if (preg_match("#^{$pattern}$#", $uri, $matches)) {
+                array_shift($matches); // loại bỏ toàn bộ match đầu tiên (toàn chuỗi)
+                $this->invoke($callback, $matches);
+                return;
             }
+        }
+
+        Response::json([
+            'error' => 'Route not found',
+            'uri' => $uri,
+            'method' => $method,
+            'available_routes' => array_keys($this->routes[$method] ?? []),
+        ], 404);
+    }
+
+    private function invoke($callback, $params = []) {
+        if (is_array($callback)) {
+            [$class, $methodName] = $callback;
+            $controller = new $class();
+            $controller->$methodName(...$params);
         } else {
-            Response::json([
-                'error' => 'Route not found',
-                'uri' => $uri,
-                'method' => $method,
-                'available_routes' => array_keys($this->routes[$method] ?? []),
-            ], 404);
+            call_user_func_array($callback, $params);
         }
     }
 }

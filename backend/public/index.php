@@ -10,7 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 // ======= END CORS CONFIG =======
 
-
 require_once dirname(__DIR__) . '/app/config/env.php';
 loadEnv(dirname(__DIR__) . '/.env');
 require_once dirname(__DIR__) . '/app/Core/Autoloader.php';
@@ -18,6 +17,8 @@ require_once dirname(__DIR__) . '/app/Core/Router.php';
 
 use App\Core\Router;
 use App\Controllers\BannerController;
+use App\Controllers\SectionController;
+use App\Controllers\FooterController;
 
 $router = new Router();
 
@@ -26,11 +27,29 @@ $router = new Router();
 /**
  * Banner routes
  */
-$router->post('/banners/create', [BannerController::class, 'create']);
-$router->get('/banners/list', [BannerController::class, 'list']);
-$router->post('/banners/delete', [BannerController::class, 'delete']); 
+$router->post('/banners', [BannerController::class, 'create']);
+$router->get('/banners', [BannerController::class, 'list']);
+$router->delete('/banners/{id}', [BannerController::class, 'delete']);
 
+/**
+ * Footer routes
+ */
+$router->get('/footers', [FooterController::class, 'getFooter']);
+$router->post('/footers/update', [FooterController::class, 'updateGeneralInfoOfCompany']);
+
+/**3
+ * Section routes
+ */
+// $router->get('/sections', [SectionController::class, 'index']);                  
+// $router->get('/sections/{id}', [SectionController::class, 'show']);              
+$router->post('/sections', [SectionController::class, 'create']);         
+$router->delete('/sections/{id}', [SectionController::class, 'delete']);         
+$router->get('/pages/{pageId}/sections', [SectionController::class, 'getByPage']); 
+
+/**
+ * Comment routes
+ */
+$router->post('/comments', [CommentController::class, 'create']);
 // ======= END ROUTES =======
-
 
 $router->dispatch();

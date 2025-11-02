@@ -1,0 +1,219 @@
+-- Bảng User
+CREATE TABLE User (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    role VARCHAR(50),
+    fullName VARCHAR(100),
+    avatarUrl VARCHAR(255),
+    email VARCHAR(100) UNIQUE,
+    phone VARCHAR(20),
+    password VARCHAR(255),
+    isActive BOOLEAN DEFAULT TRUE,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Bảng Post
+CREATE TABLE Post (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT,
+    title VARCHAR(255),
+    content TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    type VARCHAR(50),
+    FOREIGN KEY (userId) REFERENCES User(id)
+);
+
+-- Bảng Media
+CREATE TABLE Media (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    url VARCHAR(255),
+    type VARCHAR(50),
+    postId INT,
+    FOREIGN KEY (postId) REFERENCES Post(id)
+);
+
+-- Bảng BannerHomePage
+CREATE TABLE BannerHomePage (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    url VARCHAR(255),
+    dayStart DATE,
+    dayEnd DATE
+);
+
+-- Bảng TourCategory
+CREATE TABLE TourCategory (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tourCategoryName VARCHAR(100),
+    description TEXT
+);
+
+-- Bảng Tour
+CREATE TABLE Tour (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    shortDescription TEXT,
+    postId INT,
+    thumbnailUrl VARCHAR(255),
+    tourType VARCHAR(100),
+    categoryId INT,
+    FOREIGN KEY (postId) REFERENCES Post(id),
+    FOREIGN KEY (categoryId) REFERENCES TourCategory(id)
+);
+
+-- Bảng TourItinerary
+CREATE TABLE TourItinerary (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    availableSeat INT,
+    departureDate DATE,
+    price DECIMAL(10,2),
+    durationDays INT,
+    durationNights INT,
+    tourId INT,
+    FOREIGN KEY (tourId) REFERENCES Tour(id)
+);
+
+-- Bảng Place
+CREATE TABLE Place (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+    city VARCHAR(100),
+    province VARCHAR(100),
+    country VARCHAR(100),
+    footerId INT,
+    FOREIGN KEY (footerId) REFERENCES Footer(id)
+);
+
+-- Bảng Tour Destination
+CREATE TABLE TourDestination(
+	placeId INT,
+    tourId INT,
+    `order` Int UNIQUE,
+    FOREIGN KEY (placeId) REFERENCES Place(id),
+    FOREIGN KEY (tourId) REFERENCES Tour(id),
+    PRIMARY KEY(placeId, tourId)
+);
+-- Bảng Booking
+CREATE TABLE Booking (
+    userId INT,
+    tourId INT,
+    totalCost DECIMAL(10,2),
+    numberOfChild INT,
+    numberOfAdult INT,
+    status VARCHAR(50),
+    PRIMARY KEY (userId, tourId),
+    FOREIGN KEY (userId) REFERENCES User(id),
+    FOREIGN KEY (tourId) REFERENCES Tour(id)
+);
+
+-- Bảng Comment
+CREATE TABLE Comment (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT,
+    tourId INT,
+    content TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    rating TINYINT CHECK (rating BETWEEN 1 AND 5),
+    FOREIGN KEY (userId) REFERENCES User(id),
+    FOREIGN KEY (tourId) REFERENCES TourItinerary(id)
+);
+
+
+CREATE TABLE Page (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT
+);
+
+CREATE TABLE Section (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    page_id INT NOT NULL,
+    type VARCHAR(100),
+    `order` INT UNIQUE,
+    title VARCHAR(255),
+    subtitle VARCHAR(255),
+    description TEXT,
+    background_color VARCHAR(50),
+    image_url VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (page_id) REFERENCES Page(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Item (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    section_id INT NOT NULL,
+    icon VARCHAR(255),
+    title VARCHAR(255),
+    buttonText VARCHAR(255),
+    buttonPageId INT,
+    subtitle VARCHAR(255),
+    imageUrl VARCHAR(255),
+    `desc` TEXT,
+    color VARCHAR(50),
+    FOREIGN KEY (section_id) REFERENCES Section(id) ON DELETE CASCADE,
+    FOREIGN KEY (buttonPageId) REFERENCES Page(id) ON DELETE SET NULL
+);
+
+CREATE TABLE Footer (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_name VARCHAR(255) NOT NULL,
+    slogan VARCHAR(255),
+    logo_url VARCHAR(500),
+    address VARCHAR(255),
+    email VARCHAR(150),
+    hotline VARCHAR(50),
+    facebook_link VARCHAR(255),
+    instagram_link VARCHAR(255)
+);
+
+
+INSERT INTO Page (name, description) VALUES ('LandingPage', 'Trang chủ của BK Tours');
+-- SECTION 1: why_choose_us
+INSERT INTO Section 
+(page_id, type, `order`, title, subtitle, description, background_color, image_url)
+VALUES
+(1, 'why_choose_us', 1, 'Tại sao nên chọn BKTours', NULL, NULL, NULL, NULL);
+
+-- SECTION 2: content_type_one
+INSERT INTO Section 
+(page_id, type, `order`, title, subtitle, description, background_color, image_url)
+VALUES
+(1, 'content_type_one', 2, 'Get Your Favourite Resort Bookings', 'Fast & Easy', NULL, '#d0d0d042',
+ 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&q=80&w=800');
+
+-- SECTION 3: content_type_two
+INSERT INTO Section 
+(page_id, type, `order`, title, subtitle, description, background_color, image_url)
+VALUES
+(1, 'content_type_two', 3, NULL, NULL, NULL, NULL, NULL);
+
+INSERT INTO Item (section_id, icon, title, `desc`, imageUrl, buttonText, color)
+VALUES
+(1, 'confirmation', 'Ultimate flexibility', 'You''re in control...', NULL, NULL, NULL),
+(1, 'lightbulb', 'Memorable experiences', 'Browse and book...', NULL, NULL, NULL),
+(1, 'diamond', 'Quality at our core', 'High-quality standards...', NULL, NULL, NULL),
+(1, 'medal', 'Award-winning support', 'We''re here to help...', NULL, NULL, NULL);
+
+INSERT INTO Item (section_id, icon, title, `desc`, imageUrl, buttonText, color)
+VALUES
+(2, '📍', 'Choose Destination', 'Lorem ipsum...', NULL, NULL, '#FFB800'),
+(2, '📅', 'Check Availability', 'Lorem ipsum...', NULL, NULL, '#FF6B4A'),
+(2, '🚗', 'Let''s Go', 'Lorem ipsum...', NULL, NULL, '#1B7B8F');
+
+INSERT INTO Item (section_id, icon, title, `desc`, imageUrl, buttonText, color)
+VALUES
+(3, NULL, 'Enjoy 5-Star Comfort', NULL, '/assets/hotel1.jpg', 'Explore Now', NULL),
+(3, NULL, 'Discover The Wild', NULL, '/assets/hotel2.jpg', 'Book Trip', NULL);
+
+INSERT INTO Section (
+  page_id, type, `order`,
+  title, subtitle, description,
+  background_color, image_url
+)
+VALUES (
+  1, 'content_type_three', 4,
+  'We Provide You Best Europe Sightseeing Tours',
+  'PROMOTION',
+  'Et labore harum non nobis ipsum eum molestias mollitia et corporis praesentium a laudantium internos. Non quis eius quo eligendi corrupti et fugiat nulla qui soluta recusandae in maxime quasi aut ducimus illum aut optio quibusdam!',
+  '#ffffff',
+  'https://example.com/images/eiffel-tower.jpg'
+);
