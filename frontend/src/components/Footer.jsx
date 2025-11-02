@@ -8,11 +8,11 @@ import {
   IconButton,
   Container,
 } from "@mui/material";
-import { styled, textAlign } from "@mui/system";
-import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import { styled } from "@mui/system";
 import FacebookIcon from "@mui/icons-material/Facebook";
-import TwitterIcon from "@mui/icons-material/Twitter";
-import AllInclusiveIcon from "@mui/icons-material/AllInclusive";
+import { useEffect, useState } from "react";
+import api from "../api/api";
+import { Instagram } from "@mui/icons-material";
 
 const FooterWrapper = styled(Box)(({ theme }) => ({
   backgroundColor: "#1f2b32",
@@ -38,6 +38,41 @@ const NewsletterInput = styled(TextField)({
 });
 
 export default function Footer() {
+  const [footerData, setFooterData] = useState(null);
+
+  useEffect(() => {
+    const fetchFooter = async () => {
+      try {
+        const res = await api.get("footers");
+        console.log(res.data);
+        if (res.data?.success) {
+          setFooterData(res.data.data);
+        } else {
+          console.error("Failed to fetch sections:", res.data);
+        }
+      } catch (error) {
+        console.error("Error fetching sections:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFooter();
+  }, []);
+
+  if (!footerData) return null;
+
+  const {
+    company_name,
+    slogan,
+    facebook_link,
+    instagram_link,
+    places = [],
+  } = footerData;
+
+  // Lấy danh sách country duy nhất
+  const countries = [...new Set(places.map((p) => p.country))];
+
   return (
     <FooterWrapper>
       <Container
@@ -51,10 +86,10 @@ export default function Footer() {
           container
           spacing={{ xs: 4, md: 6 }}
           sx={{
-            flexDirection: { xs: "column", md: "row" }, 
-            alignItems: { xs: "center", md: "flex-start" }, 
-            justifyContent: { xs: "center", md: "space-between" }, 
-            textAlign: { xs: "center", md: "left" }, 
+            flexDirection: { xs: "column", md: "row" },
+            alignItems: { xs: "center", md: "flex-start" },
+            justifyContent: { xs: "center", md: "space-between" },
+            textAlign: { xs: "center", md: "left" },
           }}
         >
           {/* === Cột 1 === */}
@@ -67,8 +102,9 @@ export default function Footer() {
                 fontSize: { xs: "1.5rem", md: "1.8rem" },
               }}
             >
-              Travel
+              {company_name}
             </Typography>
+
             <Typography
               variant="body1"
               sx={{
@@ -78,33 +114,72 @@ export default function Footer() {
                 fontSize: { xs: "1rem", md: "1rem" },
               }}
             >
-              Travel helps companies manage payments easily.
+              {slogan}
             </Typography>
+
+            {/* Mạng xã hội */}
             <Box
               sx={{
                 display: "flex",
                 justifyContent: { xs: "center", md: "flex-start" },
                 gap: 1,
+                mb: 2,
               }}
             >
-              {[LinkedInIcon, FacebookIcon, TwitterIcon, AllInclusiveIcon].map(
-                (Icon, i) => (
-                  <IconButton
-                    key={i}
-                    size="small"
-                    sx={{
-                      color: "#E4714E",
-                      transition: "0.3s",
-                      "&:hover": {
-                        backgroundColor: "rgba(255,255,255,0.1)",
-                        transform: "scale(1.1)",
-                      },
-                    }}
-                  >
-                    <Icon />
-                  </IconButton>
-                )
-              )}
+              <IconButton
+                size="small"
+                sx={{
+                  color: "#E4714E",
+                  transition: "0.3s",
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    transform: "scale(1.1)",
+                  },
+                }}
+                component="a"
+                href={facebook_link}
+                target="_blank"
+              >
+                <FacebookIcon />
+              </IconButton>
+
+              <IconButton
+                size="small"
+                sx={{
+                  color: "#E4714E",
+                  transition: "0.3s",
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    transform: "scale(1.1)",
+                  },
+                }}
+                component="a"
+                href={instagram_link}
+                target="_blank"
+              >
+                <Instagram />
+              </IconButton>
+            </Box>
+
+            <Box sx={{ color: "#ccc" }}>
+              <Typography
+                variant="body2"
+                sx={{ fontSize: { xs: "0.95rem", md: "1rem" }, mb: 0.5 }}
+              >
+                {footerData.email}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ fontSize: { xs: "0.95rem", md: "1rem" }, mb: 0.5 }}
+              >
+                {footerData.hotline}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ fontSize: { xs: "0.95rem", md: "1rem" } }}
+              >
+                {footerData.address}
+              </Typography>
             </Box>
           </Grid>
 
@@ -123,11 +198,11 @@ export default function Footer() {
                 fontSize: { xs: "1rem", md: "1.1rem" },
               }}
             >
-              Company
+              Địa điểm
             </Typography>
-            {["About Us", "Careers", "Blog", "Pricing"].map((item) => (
+            {countries.map((country) => (
               <Typography
-                key={item}
+                key={country}
                 variant="body1"
                 sx={{
                   mb: 1,
@@ -140,12 +215,13 @@ export default function Footer() {
                   underline="none"
                   sx={{ color: "inherit", "&:hover": { color: "#fff" } }}
                 >
-                  {item}
+                  {country}
                 </Link>
               </Typography>
             ))}
           </Grid>
 
+          {/* === Cột 2 === */}
           <Grid
             item
             xs={6}
@@ -161,9 +237,9 @@ export default function Footer() {
                 fontSize: { xs: "1rem", md: "1.1rem" },
               }}
             >
-              Destinations
+              Công ty
             </Typography>
-            {["Maldives", "Los Angeles", "Las Vegas", "Toronto"].map((item) => (
+            {["Về chúng tôi", "Blog"].map((item) => (
               <Typography
                 key={item}
                 variant="body1"
@@ -184,6 +260,7 @@ export default function Footer() {
             ))}
           </Grid>
 
+          {/* === Cột 4 (Newsletter) === */}
           <Grid item xs={12} sm={12} md={5}>
             <Typography
               variant="h6"
@@ -217,14 +294,12 @@ export default function Footer() {
               />
               <Button
                 variant="contained"
-                minWidth
                 sx={{
                   borderRadius: { xs: "8px", sm: "0 8px 8px 0" },
                   backgroundColor: "#E4714E",
                   fontWeight: 600,
                   px: 3,
                   fontSize: "16px",
-                  minWidth: { sm: "auto" },
                   "&:hover": { backgroundColor: "#d65f3c" },
                 }}
               >
