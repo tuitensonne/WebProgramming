@@ -1,9 +1,7 @@
-// src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage/guest/LandingPage";
 
 function App() {
-
   return (
     <Router>
       <Routes>
