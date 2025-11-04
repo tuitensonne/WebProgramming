@@ -11,7 +11,7 @@ import {
 import { styled } from "@mui/system";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import { useEffect, useState } from "react";
-import api from "../api/api";
+import api from "../../api/api";
 import { Instagram } from "@mui/icons-material";
 
 const FooterWrapper = styled(Box)(({ theme }) => ({

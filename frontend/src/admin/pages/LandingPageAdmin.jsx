@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import api from "../../../api/api";
+import api from "../../api/api";
 import { IconEdit, IconTrash, IconPlus } from "@tabler/icons-react";
-import LoadingComponent from "../../../components/LoadingComponent";
-import SectionEditor from "../../../components/LandingPage/SectionEditor";
+import LoadingComponent from "../components/LoadingComponent";
+import SectionEditor from "../components/SectionEditor";
 
 export default function LandingPageAdmin() {
   const [sections, setSections] = useState([]);

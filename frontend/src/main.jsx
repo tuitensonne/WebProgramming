@@ -3,12 +3,14 @@ import ReactDOM from "react-dom/client";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import "normalize.css";
 import "@fontsource/inter";
-import theme from "./theme/theme";
-import GlobalStyles from "./theme/GlobalStyles";
-import App from "./App";
-import AdminApp from "./admin";
 
-const path = window.location.pathname; 
+import App from "@client/App";
+import theme from "@client/theme/theme";
+import GlobalStyles from "@client/theme/GlobalStyles";
+
+import AdminApp from "@admin";
+
+const path = window.location.pathname;
 
 if (path.startsWith("/admin")) {
   ReactDOM.createRoot(document.getElementById("root")).render(

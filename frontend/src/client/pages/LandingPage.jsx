@@ -1,16 +1,16 @@
 // src/pages/LandingPage/admin/guest/LandingPage.jsx
 import { useEffect, useState } from "react";
-import api from "../../../api/api"
+import api from "../../api/api";
 
-import { WhyChooseUsSection } from "../../../components/LandingPage/WhyChooseUsSection";
-import { ContentSectionTypeOne } from "../../../components/LandingPage/LandingPageLayoutOne";
-import { LandingPageLayoutTwo } from "../../../components/LandingPage/LandingPageLayoutTwo";
-import { ItemListingLayout } from "../../../components/LandingPage/ItemListingLayout";
-import { LandingPageLayoutThree } from "../../../components/LandingPage/LandingPageLayoutThree";
-import Header from "../../../components/Header";
-import Thumbnail from "../../../components/Thumbnail";
-import Footer from "../../../components/Footer";
-import LoadingComponent from "../../../components/LoadingComponent";
+import { WhyChooseUsSection } from "../components/LandingPage/WhyChooseUsSection";
+import { ContentSectionTypeOne } from "../components/LandingPage/LandingPageLayoutOne";
+import { LandingPageLayoutTwo } from "../components/LandingPage/LandingPageLayoutTwo";
+import { ItemListingLayout } from "../components/LandingPage/ItemListingLayout";
+import { LandingPageLayoutThree } from "../components/LandingPage/LandingPageLayoutThree";
+import Header from "../components/Header";
+import Thumbnail from "../components/Thumbnail";
+import Footer from "../components/Footer";
+import LoadingComponent from "../components/LoadingComponent";
 
 const sectionComponents = {
   why_choose_us: WhyChooseUsSection,

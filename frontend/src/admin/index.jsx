@@ -1,22 +1,22 @@
-import React from "react";
+// src/admin/AdminApp.jsx
+import React, { useEffect } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-
-import "@tabler/core/dist/css/tabler.min.css";
-import "@tabler/core/dist/js/tabler.min.js";
-
-import AdminLayout from "../Layouts/AdminLayout";
-import LandingPageAdmin from "../pages/LandingPage/admin/LandingPageAdmin";
+import AdminLayout from "./Layouts/AdminLayout";
+import LandingPageAdmin from "./pages/LandingPageAdmin";
 
 const adminRouter = createBrowserRouter([
   {
     path: "/admin",
     element: <AdminLayout />,
-    children: [
-      { index: true, element: <LandingPageAdmin /> }, // ✅ dùng `index: true` thay cho path: ""
-    ],
+    children: [{ index: true, element: <LandingPageAdmin /> }],
   },
 ]);
 
 export default function AdminApp() {
+  useEffect(() => {
+    import("@tabler/core/dist/css/tabler.min.css");
+    import("@tabler/core/dist/js/tabler.min.js");
+  }, []);
+
   return <RouterProvider router={adminRouter} />;
 }

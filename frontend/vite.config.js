@@ -1,15 +1,12 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  build: {
-    rollupOptions: {
-      input: {
-        client: resolve(__dirname, 'client.html'),
-        admin: resolve(__dirname, 'admin.html'),
-      },
+  resolve: {
+    alias: {
+      "@client": "/src/client",
+      "@admin": "/src/admin",
     },
   },
 });

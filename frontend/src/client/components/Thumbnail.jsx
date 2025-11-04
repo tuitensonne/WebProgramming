@@ -13,7 +13,7 @@ import {
   ArrowForwardIos as ArrowForwardIosIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
-import api from "../api/api";
+import api from "../../api/api";
 
 
 const SearchContainer = styled(Box)(({ theme }) => ({
