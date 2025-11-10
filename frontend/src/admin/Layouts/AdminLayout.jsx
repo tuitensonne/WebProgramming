@@ -1,33 +1,28 @@
-import React from "react";
-import { Link, Outlet } from "react-router-dom";
+import React, { useState } from "react";
+import { Outlet } from "react-router-dom";
+import AdminSidebar from "../components/AdminSidebar";
+import AdminHeader from "../components/AdminHeader";
 
 export default function AdminLayout() {
-  return (
-    <div className="page">
-      {/* Sidebar */}
-      <aside className="navbar navbar-vertical navbar-expand-lg navbar-dark bg-dark">
-        <div className="container-fluid">
-          <Link className="navbar-brand" to="/admin">Dashboard</Link>
-          <ul className="navbar-nav pt-lg-3">
-            <li className="nav-item">
-              <Link className="nav-link" to="/admin/landing-page">
-                <span className="nav-link-title">Landing Page Sections</span>
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </aside>
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
-      {/* Main */}
-      <div className="page-wrapper">
-        <div className="page-header">
-          <h2 className="page-title">Quản lý Landing Page</h2>
-        </div>
+    return (
+        <div className="page" style={{ display: "flex" }}>
+            <AdminSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
-        <div className="page-body container-xl">
-          <Outlet />
+            <div
+                className="page-wrapper"
+                style={{
+                    flexGrow: 1,
+                    transition: "margin-left 0.3s",
+                    marginLeft: sidebarOpen ? 240 : 0, // Đẩy sang phải khi sidebar mở
+                }}
+            >
+                <AdminHeader />
+                <div className="page-body container-xl">
+                    <Outlet />
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
