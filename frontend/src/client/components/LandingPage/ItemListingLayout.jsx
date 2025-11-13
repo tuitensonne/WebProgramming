@@ -33,6 +33,7 @@ export const ItemListingLayout = ({ data }) => {
 
     const fetchToursByCategory = async () => {
       try {
+        console.log("Fetching tours for category ID:", data.category_id);
         const res = await api.get(`/tours/top?categoryId=${data.category_id}`);
         if (res.data?.success) {
           setTours(res.data.data || []);
