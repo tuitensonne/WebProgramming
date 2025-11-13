@@ -179,7 +179,7 @@ export const ItemListingLayout = ({ data }) => {
                     mt: 2,
                     fontSize: { xs: "1.1rem", sm: "1rem", md: "1.1rem" },
                     lineHeight: 1.3,
-                    wordWrap: "break-word", // Cho phép text xuống hàng
+                    wordWrap: "break-word", 
                     overflowWrap: "break-word",
                   }}
                 >
