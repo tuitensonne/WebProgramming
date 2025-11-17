@@ -1,6 +1,6 @@
 import React, { useState, createContext } from "react";
 // import Header from "../components/Header";
-import ToastNotification from "../components/ToastNotification";
+import AlertNotification from "../components/Alert";
 import ConfirmModal from "../components/ConfirmModal";
 import { Outlet } from "react-router-dom";
 
@@ -48,7 +48,7 @@ export default function AdminLayout() {
           </div>
         </div>
 
-        <ToastNotification {...toast} />
+        <AlertNotification {...toast} />
         <ConfirmModal
           show={confirm.show}
           title={confirm.title}

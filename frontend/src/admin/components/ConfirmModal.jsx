@@ -6,8 +6,8 @@ export default function ConfirmModal({ show, title, message, onConfirm, onCancel
 
   return (
     <div
-      className="modal fade show d-block"
-      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+      className="modal modal-blur fade show d-block"
+      style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 2000 }}
       onClick={onCancel}
     >
       <div 
@@ -19,20 +19,21 @@ export default function ConfirmModal({ show, title, message, onConfirm, onCancel
             <h5 className="modal-title">{title || "Xác nhận"}</h5>
             <button 
               type="button" 
-              className="btn-close" 
+              className="btn-close"
               onClick={onCancel}
-              aria-label="Close"
-            />
+            >
+              <IconX size={18} />
+            </button>
           </div>
-          
+
           <div className="modal-body">
             <p className="mb-0">{message}</p>
           </div>
-          
+
           <div className="modal-footer">
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn btn-outline-secondary"
               onClick={onCancel}
             >
               Hủy
