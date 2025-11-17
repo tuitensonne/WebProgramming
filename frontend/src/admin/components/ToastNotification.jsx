@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Toast } from "bootstrap"; // ⭐ IMPORT TRỰC TIẾP
+import { Toast } from "bootstrap";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 export default function ToastNotification({ show, message, type = "success" }) {

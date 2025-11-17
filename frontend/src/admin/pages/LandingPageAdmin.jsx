@@ -1,14 +1,21 @@
 import React, { useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { UIContext } from "../Layouts/AdminLayout";
 import api from "../../api/api";
-import { IconEdit, IconTrash, IconPlus, IconCheck, IconX } from "@tabler/icons-react";
+import {
+  IconEdit,
+  IconTrash,
+  IconPlus,
+  IconCheck,
+  IconX,
+} from "@tabler/icons-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import LoadingComponent from "../components/LoadingComponent";
-import { ItemListingLayout } from "../../client/components/LandingPage/ItemListingLayout"
-import { WhyChooseUsSection } from "../../client/components/LandingPage/WhyChooseUsSection"
-import { LandingPageLayoutOne } from "../../client/components/LandingPage/LandingPageLayoutOne"
-import { LandingPageLayoutTwo } from "../../client/components/LandingPage/LandingPageLayoutTwo"
-import { LandingPageLayoutThree } from "../../client/components/LandingPage/LandingPageLayoutThree"
+import { ItemListingLayout } from "../../client/components/LandingPage/ItemListingLayout";
+import { WhyChooseUsSection } from "../../client/components/LandingPage/WhyChooseUsSection";
+import { LandingPageLayoutOne } from "../../client/components/LandingPage/LandingPageLayoutOne";
+import { LandingPageLayoutTwo } from "../../client/components/LandingPage/LandingPageLayoutTwo";
+import { LandingPageLayoutThree } from "../../client/components/LandingPage/LandingPageLayoutThree";
 
 const sectionComponents = {
   why_choose_us: WhyChooseUsSection,
@@ -18,7 +25,8 @@ const sectionComponents = {
   content_type_three: LandingPageLayoutThree,
 };
 
-export default function LandingPageAdmin({ onEditSection }) {
+export default function LandingPageAdmin() {
+  const navigate = useNavigate(); 
   const { showToast, showConfirm } = useContext(UIContext);
   const [sections, setSections] = useState([]);
   const [originalSections, setOriginalSections] = useState([]);
@@ -60,7 +68,7 @@ export default function LandingPageAdmin({ onEditSection }) {
     setSections(originalSections);
     setChanged(false);
   };
-  
+
   const handleSaveOrder = async () => {
     try {
       setSaving(true);
@@ -84,7 +92,10 @@ export default function LandingPageAdmin({ onEditSection }) {
           setChanged(true);
           showToast("Đã xoá section thành công!", "success");
         } else {
-          showToast("Xoá thất bại: " + (res.data?.message || "Không rõ lỗi"), "danger");
+          showToast(
+            "Xoá thất bại: " + (res.data?.message || "Không rõ lỗi"),
+            "danger"
+          );
         }
       } catch (error) {
         console.error("Delete failed:", error);
@@ -95,10 +106,17 @@ export default function LandingPageAdmin({ onEditSection }) {
 
   if (loading) return <LoadingComponent />;
   return (
-    <div className="container-xl py-4" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-      {/* HEADER */}
-      <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3" style={{ flexShrink: 0 }}>
-        <h2 className="page-title mb-0 fw-bold text-primary">Quản lý các Section</h2>
+    <div
+      className="container-xl py-4"
+      style={{ height: "100vh", display: "flex", flexDirection: "column" }}
+    >
+      <div
+        className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3"
+        style={{ flexShrink: 0 }}
+      >
+        <h2 className="page-title mb-0 fw-bold text-primary">
+          Quản lý các Section
+        </h2>
 
         <div className="d-flex align-items-center gap-2">
           {changed && (
@@ -115,7 +133,8 @@ export default function LandingPageAdmin({ onEditSection }) {
                 disabled={saving}
                 onClick={handleSaveOrder}
               >
-                <IconCheck size={18} /> {saving ? "Đang lưu..." : "Lưu thay đổi"}
+                <IconCheck size={18} />{" "}
+                {saving ? "Đang lưu..." : "Lưu thay đổi"}
               </button>
             </>
           )}
@@ -137,7 +156,9 @@ export default function LandingPageAdmin({ onEditSection }) {
                 flex: 1,
                 overflowY: "auto",
                 paddingBottom: 20,
-                backgroundColor: snapshot.isDraggingOver ? "#f0f7ff" : "transparent",
+                backgroundColor: snapshot.isDraggingOver
+                  ? "#f0f7ff"
+                  : "transparent",
                 borderRadius: 8,
               }}
             >
@@ -145,40 +166,52 @@ export default function LandingPageAdmin({ onEditSection }) {
                 const SectionComp = sectionComponents[section.type];
 
                 return (
-                  <Draggable key={section.id.toString()} draggableId={section.id.toString()} index={index}>
+                  <Draggable
+                    key={section.id.toString()}
+                    draggableId={section.id.toString()}
+                    index={index}
+                  >
                     {(provided, snapshot) => {
                       const isDragging = snapshot.isDragging;
 
                       return (
-                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                        >
                           <div
                             className="card shadow-sm mb-3"
                             style={{
                               transform: isDragging ? "scale(0.7)" : "scale(1)",
-                              border: isDragging ? "2px dashed #0d6efd" : "1px solid #e5e7eb",
+                              border: isDragging
+                                ? "2px dashed #0d6efd"
+                                : "1px solid #e5e7eb",
                             }}
                           >
                             <div className="card-header d-flex justify-content-between align-items-center bg-light">
                               <div className="d-flex align-items-center gap-2">
-                                <span className="badge bg-primary">#{section.order}</span>
+                                <span className="badge bg-primary">
+                                  #{section.order}
+                                </span>
                                 <strong>{section.type}</strong>
                               </div>
 
                               <div className="d-flex gap-2">
                                 <button
                                   className="btn btn-outline-primary btn-sm"
-                                  onClick={() => navigate(`/admin/sections/${section.id}`)}
+                                  onClick={() =>
+                                    navigate(`/admin/sections/${section.id}`)
+                                  }
                                 >
                                   <IconEdit size={16} />
                                 </button>
 
                                 <button
                                   className="btn btn-outline-danger btn-sm"
-                                  onClick={() => {
-                                    if (!confirm("Xóa section này?")) return;
-                                    setSections(prev => prev.filter(s => s.id !== section.id));
-                                    setChanged(true);
-                                  }}
+                                  onClick={() =>
+                                    handleDeleteSection(section.id)
+                                  }
                                 >
                                   <IconTrash size={16} />
                                 </button>
@@ -189,7 +222,9 @@ export default function LandingPageAdmin({ onEditSection }) {
                               {SectionComp ? (
                                 <SectionComp data={section} />
                               ) : (
-                                <p className="text-muted fst-italic">Không có component cho loại này.</p>
+                                <p className="text-muted fst-italic">
+                                  Không có component cho loại này.
+                                </p>
                               )}
                             </div>
                           </div>

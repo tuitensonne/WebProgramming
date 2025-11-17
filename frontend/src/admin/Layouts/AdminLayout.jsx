@@ -25,9 +25,11 @@ export default function AdminLayout() {
   };
 
   const handleConfirm = () => {
-    if (confirm.onConfirm) confirm.onConfirm();
+    const fn = confirm.onConfirm;
     setConfirm({ show: false, title: "", message: "", onConfirm: null });
+    if (fn) fn();
   };
+
 
   const handleCancel = () => {
     setConfirm({ show: false, title: "", message: "", onConfirm: null });
