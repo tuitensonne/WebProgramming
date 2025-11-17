@@ -1,33 +1,60 @@
-import React from "react";
-import { Link, Outlet } from "react-router-dom";
+import React, { useState, createContext } from "react";
+// import Header from "../components/Header";
+import ToastNotification from "../components/ToastNotification";
+import ConfirmModal from "../components/ConfirmModal";
+import { Outlet } from "react-router-dom";
+
+export const UIContext = createContext();
 
 export default function AdminLayout() {
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  const [confirm, setConfirm] = useState({
+    show: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type }), 3500);
+  };
+
+  const showConfirm = (message, onConfirm, title = "Xác nhận hành động") => {
+    setConfirm({ show: true, title, message, onConfirm });
+  };
+
+  const handleConfirm = () => {
+    if (confirm.onConfirm) confirm.onConfirm();
+    setConfirm({ show: false, title: "", message: "", onConfirm: null });
+  };
+
+  const handleCancel = () => {
+    setConfirm({ show: false, title: "", message: "", onConfirm: null });
+  };
+
   return (
-    <div className="page">
-      {/* Sidebar */}
-      <aside className="navbar navbar-vertical navbar-expand-lg navbar-dark bg-dark">
-        <div className="container-fluid">
-          <Link className="navbar-brand" to="/admin">Dashboard</Link>
-          <ul className="navbar-nav pt-lg-3">
-            <li className="nav-item">
-              <Link className="nav-link" to="/admin/landing-page">
-                <span className="nav-link-title">Landing Page Sections</span>
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <div className="page-wrapper">
-        <div className="page-header">
-          <h2 className="page-title">Quản lý Landing Page</h2>
+    <UIContext.Provider value={{ showToast, showConfirm }}>
+      <div className="page">
+        {/* <Header /> */}
+        <div className="page-wrapper">
+          <div className="page-header container-xl mt-4">
+            <h2 className="page-title">Quản lý Landing Page</h2>
+          </div>
+          <div className="page-body container-xl mt-3">
+            <Outlet />
+          </div>
         </div>
 
-        <div className="page-body container-xl">
-          <Outlet />
-        </div>
+        <ToastNotification {...toast} />
+        <ConfirmModal
+          show={confirm.show}
+          title={confirm.title}
+          message={confirm.message}
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+        />
       </div>
-    </div>
+    </UIContext.Provider>
   );
 }

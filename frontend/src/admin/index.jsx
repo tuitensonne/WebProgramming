@@ -4,13 +4,19 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AdminLayout from "./Layouts/AdminLayout";
 import LandingPageAdmin from "./pages/LandingPageAdmin";
 
-const adminRouter = createBrowserRouter([
-  {
-    path: "/admin",
-    element: <AdminLayout />,
-    children: [{ index: true, element: <LandingPageAdmin /> }],
-  },
-]);
+const adminRouter = createBrowserRouter(
+  [
+    {
+      path: "",
+      element: <AdminLayout />,
+      children: [
+        { index: true, element: <LandingPageAdmin /> }
+      ],
+    },
+  ],
+  { basename: "/admin" }
+);
+
 
 export default function AdminApp() {
   useEffect(() => {

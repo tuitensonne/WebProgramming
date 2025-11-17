@@ -12,7 +12,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-export const ContentSectionTypeOne = ({ data }) => {
+export const LandingPageLayoutOne = ({ data }) => {
   const { title, subtitle, backgroundColor, items = [], imageUrl } = data;
 
   return (

@@ -3,18 +3,16 @@ import { useEffect, useState } from "react";
 import api from "../../api/api";
 
 import { WhyChooseUsSection } from "../components/LandingPage/WhyChooseUsSection";
-import { ContentSectionTypeOne } from "../components/LandingPage/LandingPageLayoutOne";
+import { LandingPageLayoutOne } from "../components/LandingPage/LandingPageLayoutOne";
 import { LandingPageLayoutTwo } from "../components/LandingPage/LandingPageLayoutTwo";
 import { ItemListingLayout } from "../components/LandingPage/ItemListingLayout";
 import { LandingPageLayoutThree } from "../components/LandingPage/LandingPageLayoutThree";
-import Header from "../components/Header";
 import Thumbnail from "../components/Thumbnail";
-import Footer from "../components/Footer";
 import LoadingComponent from "../components/LoadingComponent";
 
 const sectionComponents = {
   why_choose_us: WhyChooseUsSection,
-  content_type_one: ContentSectionTypeOne,
+  content_type_one: LandingPageLayoutOne,
   content_type_two: LandingPageLayoutTwo,
   item_listing_layout: ItemListingLayout,
   content_type_three: LandingPageLayoutThree,
@@ -48,7 +46,6 @@ const LandingPage = () => {
 
   return (
     <>
-      <Header />
       <Thumbnail />
 
       {sections.length > 0 ? (
@@ -62,7 +59,6 @@ const LandingPage = () => {
         <p>Không có nội dung nào để hiển thị.</p>
       )}
 
-      <Footer />
     </>
   );
 };

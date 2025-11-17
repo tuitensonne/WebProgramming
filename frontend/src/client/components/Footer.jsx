@@ -70,7 +70,6 @@ export default function Footer() {
     places = [],
   } = footerData;
 
-  // Lấy danh sách country duy nhất
   const countries = [...new Set(places.map((p) => p.country))];
 
   return (

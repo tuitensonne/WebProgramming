@@ -88,7 +88,7 @@ export const ItemListingLayout = ({ data }) => {
         }}
       >
         <Typography variant="h4" fontWeight="bold">
-          Tour Nổi Bật
+          {tours[0].categoryName}
         </Typography>
         <Typography
           sx={{
@@ -99,7 +99,7 @@ export const ItemListingLayout = ({ data }) => {
             "&:hover": { textDecoration: "underline" },
           }}
         >
-          Xem tất cả →
+          Xem tất cả
         </Typography>
       </Box>
 
