@@ -74,6 +74,7 @@ class SectionModel
                 s.image_url AS section_image_url,
                 s.created_at AS section_created_at,
                 s.updated_at AS section_updated_at,
+                s.category_id AS section_category_id,
 
                 -- Item fields
                 i.id AS item_id,
@@ -112,6 +113,7 @@ class SectionModel
                     'image_url' => $row['section_image_url'],
                     'created_at' => $row['section_created_at'],
                     'updated_at' => $row['section_updated_at'],
+                    'category_id' => $row['section_category_id'],
                     'items' => [],
                 ];
             }
@@ -133,4 +135,36 @@ class SectionModel
 
         return array_values($sections);
     }
+
+
+    public function updateOrderBatch(array $sections): bool
+    {
+        $this->db->beginTransaction();
+
+        try {
+            foreach ($sections as $section) {
+                $stmt = $this->db->prepare("UPDATE Section SET `order` = :temp WHERE id = :id");
+                $stmt->execute([
+                    ':temp' => $section['order'] + 1000, 
+                    ':id'   => $section['id']
+                ]);
+            }
+
+            foreach ($sections as $section) {
+                $stmt = $this->db->prepare("UPDATE Section SET `order` = :order WHERE id = :id");
+                $stmt->execute([
+                    ':order' => $section['order'],
+                    ':id'    => $section['id']
+                ]);
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            error_log("updateOrderBatch error: " . $e->getMessage());
+            return false;
+        }
+    }
+
 }

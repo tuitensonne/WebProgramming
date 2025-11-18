@@ -78,8 +78,8 @@ CREATE TABLE Place (
     city VARCHAR(100),
     province VARCHAR(100),
     country VARCHAR(100),
-    footerId INT,
-    FOREIGN KEY (footerId) REFERENCES Footer(id)
+    companyInfoId INT,
+    FOREIGN KEY (companyInfoId) REFERENCES CompanyInfo(id)
 );
 
 -- Bảng Tour Destination
@@ -153,7 +153,7 @@ CREATE TABLE Item (
     FOREIGN KEY (buttonPageId) REFERENCES Page(id) ON DELETE SET NULL
 );
 
-CREATE TABLE Footer (
+CREATE TABLE CompanyInfo (
     id INT AUTO_INCREMENT PRIMARY KEY,
     company_name VARCHAR(255) NOT NULL,
     slogan VARCHAR(255),
@@ -165,6 +165,16 @@ CREATE TABLE Footer (
     instagram_link VARCHAR(255)
 );
 
+CREATE TABLE ContactMessages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  fullName VARCHAR(100),
+  email VARCHAR(100),
+  phone VARCHAR(20),
+  message TEXT,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  userId INT NULL,
+  FOREIGN KEY (userId) REFERENCES User(id)
+);
 
 INSERT INTO Page (name, description) VALUES ('LandingPage', 'Trang chủ của BK Tours');
 -- SECTION 1: why_choose_us

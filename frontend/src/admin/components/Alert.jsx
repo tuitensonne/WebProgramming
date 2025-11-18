@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 
-export default function AlertNotification({ show, message, type = "success", onClose }) {
+export default function AlertNotification({
+  show,
+  message,
+  type = "success",
+  onClose,
+}) {
   const [visible, setVisible] = useState(show);
 
   useEffect(() => {
@@ -19,14 +24,18 @@ export default function AlertNotification({ show, message, type = "success", onC
   const alertType =
     type === "success"
       ? "alert alert-important alert-success"
-      : type === "danger"
-      ? "alert alert-danger"
-      : "alert alert-warning";
+      : "alert alert-important alert-danger";
 
   return (
     <div
       className={alertType}
-      style={{ position: "fixed", top: "1rem", right: "1rem", zIndex: 2000, minWidth: "250px" }}
+      style={{
+        position: "fixed",
+        top: "1rem",
+        right: "1rem",
+        zIndex: 2000,
+        minWidth: "250px",
+      }}
     >
       <div className="d-flex justify-content-between align-items-center">
         <div>{message}</div>

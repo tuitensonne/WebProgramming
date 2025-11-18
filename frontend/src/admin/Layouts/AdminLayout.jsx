@@ -3,7 +3,8 @@ import React, { useState, createContext } from "react";
 import AlertNotification from "../components/Alert";
 import ConfirmModal from "../components/ConfirmModal";
 import { Outlet } from "react-router-dom";
-
+import Header
+ from "../components/Header";
 export const UIContext = createContext();
 
 export default function AdminLayout() {
@@ -38,11 +39,8 @@ export default function AdminLayout() {
   return (
     <UIContext.Provider value={{ showToast, showConfirm }}>
       <div className="page">
-        {/* <Header /> */}
+        <Header />
         <div className="page-wrapper">
-          <div className="page-header container-xl mt-4">
-            <h2 className="page-title">Quản lý Landing Page</h2>
-          </div>
           <div className="page-body container-xl mt-3">
             <Outlet />
           </div>

@@ -37,10 +37,16 @@ const NewsletterInput = styled(TextField)({
   },
 });
 
-export default function Footer() {
-  const [footerData, setFooterData] = useState(null);
+export default function Footer({ data }) {
+  const [footerData, setFooterData] = useState(data || null);
+  const [loading, setLoading] = useState(!data);
 
   useEffect(() => {
+    if (data) {
+      setFooterData(data);
+      return;
+    }
+
     const fetchFooter = async () => {
       try {
         const res = await api.get("footers");
@@ -58,7 +64,7 @@ export default function Footer() {
     };
 
     fetchFooter();
-  }, []);
+  }, [data]);
 
   if (!footerData) return null;
 
@@ -70,7 +76,7 @@ export default function Footer() {
     places = [],
   } = footerData;
 
-  const countries = [...new Set(places.map((p) => p.country))];
+  const countries = [...new Set(places.map((p) => p.city))];
 
   return (
     <FooterWrapper>

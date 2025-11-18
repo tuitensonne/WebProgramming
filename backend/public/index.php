@@ -10,16 +10,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 // ======= END CORS CONFIG =======
 
+require_once dirname(__DIR__) . '/app/Core/Autoloader.php';
 require_once dirname(__DIR__) . '/app/config/env.php';
 loadEnv(dirname(__DIR__) . '/.env');
-require_once dirname(__DIR__) . '/app/Core/Autoloader.php';
 require_once dirname(__DIR__) . '/app/Core/Router.php';
 
 use App\Core\Router;
 use App\Controllers\BannerController;
 use App\Controllers\SectionController;
 use App\Controllers\FooterController;
-
+use App\Controllers\TourController;
 $router = new Router();
 
 // ======= ROUTES =======
@@ -35,9 +35,10 @@ $router->delete('/banners/{id}', [BannerController::class, 'delete']);
  * Footer routes
  */
 $router->get('/footers', [FooterController::class, 'getFooter']);
-$router->post('/footers/update', [FooterController::class, 'updateGeneralInfoOfCompany']);
-
-/**3
+$router->put('/footers/{id}', [FooterController::class, 'updateGeneralInfoOfCompany']);
+$router->get('/footers/places', [FooterController::class, 'getAllPlacesPagination']);
+$router->put('/footers/{id}/places', [FooterController::class, 'updatePlaces']);
+/**
  * Section routes
  */
 // $router->get('/sections', [SectionController::class, 'index']);                  
@@ -45,11 +46,16 @@ $router->post('/footers/update', [FooterController::class, 'updateGeneralInfoOfC
 $router->post('/sections', [SectionController::class, 'create']);         
 $router->delete('/sections/{id}', [SectionController::class, 'delete']);         
 $router->get('/pages/{pageId}/sections', [SectionController::class, 'getByPage']); 
-
+$router->put('/sections/reorder', [SectionController::class, 'reorder'] );
 /**
  * Comment routes
  */
 $router->post('/comments', [CommentController::class, 'create']);
 // ======= END ROUTES =======
+
+/**
+ * Tour routes
+ */
+$router->get('/tours/top', [TourController::class, 'getTopToursByCategory']);
 
 $router->dispatch();

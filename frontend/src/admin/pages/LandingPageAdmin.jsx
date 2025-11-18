@@ -119,7 +119,7 @@ export default function LandingPageAdmin() {
                 <IconX size={18} /> Hủy thay đổi
               </button>
 
-              <button className="btn btn-outline-success d-flex align-items-center gap-1" onClick={handleSaveOrder} disabled={saving}>
+              <button className="btn btn-success d-flex align-items-center gap-1" onClick={handleSaveOrder} disabled={saving}>
                 <IconCheck size={18} /> {saving ? "Đang lưu..." : "Lưu thay đổi"}
               </button>
             </>
