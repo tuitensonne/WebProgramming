@@ -58,7 +58,10 @@ export default function AdminLayout() {
                         marginLeft: sidebarOpen ? 240 : 0,
                     }}
                 >
-                    <AdminHeader />
+                    <AdminHeader
+                        sidebarOpen={sidebarOpen}
+                        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+                    />
 
                     <div className="page-body container-xl">
                         <Outlet />

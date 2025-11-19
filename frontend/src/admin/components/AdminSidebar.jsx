@@ -81,25 +81,6 @@ export default function AdminSidebar({ open, setOpen }) {
 
     return (
         <>
-            <IconButton
-                onClick={toggleDrawer}
-                sx={{
-                    position: "fixed",
-                    top: 20,
-                    left: open ? drawerWidth + 8 : 8,
-                    zIndex: 1300,
-                    backgroundColor: "#ff7043",
-                    color: "#fff",
-                    "&:hover": { backgroundColor: "#e64a19" },
-                    borderRadius: "50%",
-                    p: 1.5,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-                    transition: "left 0.3s",
-                }}
-            >
-                {open ? <CloseIcon /> : <MenuIcon />}
-            </IconButton>
-
             <Drawer
                 variant="permanent"
                 sx={{
@@ -108,30 +89,48 @@ export default function AdminSidebar({ open, setOpen }) {
                     "& .MuiDrawer-paper": {
                         width: open ? drawerWidth : 60,
                         overflowX: "hidden",
+                        whiteSpace: "nowrap",
                         transition: "width 0.3s",
                         boxSizing: "border-box",
                         backgroundColor: "#fff",
-                        color: "#1976d2",
                         borderRight: "1px solid #ddd",
+                        paddingLeft: open ? 1 : 0.5,
+                        paddingRight: open ? 1 : 0.5,
                     },
                 }}
             >
-                <Toolbar>
-                    <Typography
-                        variant="h6"
-                        noWrap
-                        sx={{
-                            color: "#1976d2",
-                            display: open ? "block" : "none",
-                        }}
+                <Toolbar
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: open ? "space-between" : "center",
+                        px: 1,
+                    }}
+                >
+                    {open && (
+                        <Typography
+                            variant="h6"
+                            noWrap
+                            sx={{ color: "#1976d2" }}
+                        >
+                            Tours Admin
+                        </Typography>
+                    )}
+
+                    {/* <IconButton
+                        onClick={toggleDrawer}
+                        sx={{ color: "#1976d2" }}
                     >
-                        BK Tours Admin
-                    </Typography>
+                        {open ? <CloseIcon /> : <MenuIcon />}
+                    </IconButton> */}
                 </Toolbar>
+
                 <Divider />
+
                 <List>
                     {menuItems.map((item) => {
                         const isActive = location.pathname === item.path;
+
                         return (
                             <ListItemButton
                                 key={item.label}
@@ -158,11 +157,18 @@ export default function AdminSidebar({ open, setOpen }) {
                                         color: isActive ? "#fff" : "#1976d2",
                                         minWidth: 0,
                                         mr: open ? 2 : "auto",
+                                        justifyContent: "center",
                                     }}
                                 >
                                     {item.icon}
                                 </ListItemIcon>
-                                {open && <ListItemText primary={item.label} />}{" "}
+
+                                {open && (
+                                    <ListItemText
+                                        primary={item.label}
+                                        sx={{ whiteSpace: "nowrap" }}
+                                    />
+                                )}
                             </ListItemButton>
                         );
                     })}

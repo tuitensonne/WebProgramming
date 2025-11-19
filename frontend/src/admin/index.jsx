@@ -15,6 +15,7 @@ const adminRouter = createBrowserRouter([
             { index: true, element: <LandingPageAdmin /> },
             { path: "users", element: <AdminUserManagement /> },
             { path: "footer", element: <FooterAdmin /> },
+            { path: "landing-page", element: <LandingPageAdmin /> },
         ],
     },
 ]);
