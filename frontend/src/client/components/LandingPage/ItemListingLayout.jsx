@@ -33,6 +33,7 @@ export const ItemListingLayout = ({ data }) => {
 
     const fetchToursByCategory = async () => {
       try {
+        console.log("Fetching tours for category ID:", data.category_id);
         const res = await api.get(`/tours/top?categoryId=${data.category_id}`);
         if (res.data?.success) {
           setTours(res.data.data || []);
@@ -87,7 +88,7 @@ export const ItemListingLayout = ({ data }) => {
         }}
       >
         <Typography variant="h4" fontWeight="bold">
-          Tour Nổi Bật
+          {tours[0].categoryName}
         </Typography>
         <Typography
           sx={{
@@ -98,7 +99,7 @@ export const ItemListingLayout = ({ data }) => {
             "&:hover": { textDecoration: "underline" },
           }}
         >
-          Xem tất cả →
+          Xem tất cả
         </Typography>
       </Box>
 
@@ -179,7 +180,7 @@ export const ItemListingLayout = ({ data }) => {
                     mt: 2,
                     fontSize: { xs: "1.1rem", sm: "1rem", md: "1.1rem" },
                     lineHeight: 1.3,
-                    wordWrap: "break-word", // Cho phép text xuống hàng
+                    wordWrap: "break-word", 
                     overflowWrap: "break-word",
                   }}
                 >
