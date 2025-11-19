@@ -51,11 +51,13 @@ $router->put('/sections/reorder', [SectionController::class, 'reorder'] );
  * Comment routes
  */
 $router->post('/comments', [CommentController::class, 'create']);
-// ======= END ROUTES =======
 
 /**
  * Tour routes
  */
 $router->get('/tours/top', [TourController::class, 'getTopToursByCategory']);
+$router->get('/tours/categories', [TourController::class, 'getAllTourCategory']);
+// ======= END ROUTES =======
+
 
 $router->dispatch();

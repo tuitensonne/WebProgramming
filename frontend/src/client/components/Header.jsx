@@ -14,7 +14,6 @@ import {
   ListItemText,
   useMediaQuery,
 } from "@mui/material";
-
 import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
   LocalOffer as LocalOfferIcon,
@@ -23,6 +22,7 @@ import {
 } from "@mui/icons-material";
 
 import { styled, alpha, useTheme } from "@mui/material/styles";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   backgroundColor: "#fff",
@@ -58,10 +58,11 @@ const ActionButton = styled(Button)(({ theme }) => ({
 }));
 
 const Header = () => {
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isFixed, setIsFixed] = useState(false);
-
+  const location = useLocation();
   const theme = useTheme();
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -80,11 +81,11 @@ const Header = () => {
   const toggleDrawer = (open) => () => setDrawerOpen(open);
 
   const menuItems = [
-    { label: "Du lịch trong nước" },
-    { label: "Du lịch quốc tế" },
-    { label: "Kiểu tour du lịch" },
-    { label: "Lịch khởi hành" },
-    { label: "Cẩm nang du lịch" }
+    { label: "Du lịch trong nước", path: "/domestic" },
+    { label: "Du lịch quốc tế", path: "/international" },
+    { label: "Kiểu tour du lịch", path: "/tour-types" },
+    { label: "Lịch khởi hành", path: "/schedule" },
+    { label: "Cẩm nang du lịch", path: "/guide" },
   ];
 
   return (
@@ -119,7 +120,6 @@ const Header = () => {
               </Box>
             )}
 
-            {/* Logo - Desktop: Left, Mobile: Center */}
             <Box
               sx={{
                 flex: isMobile ? 1 : "none",
@@ -130,24 +130,24 @@ const Header = () => {
               <Logo
                 src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 50'%3E%3Cpath fill='%23ff6b35' d='M20 10 L30 30 L20 35 L10 30 Z'/%3E%3Cpath fill='%23ff8855' d='M20 10 L30 30 L40 25 L30 5 Z'/%3E%3Ctext x='50' y='35' font-family='Arial' font-size='28' font-weight='bold' fill='%23ff6b35'%3Eviatours%3C/text%3E%3C/svg%3E"
                 alt="Viatours"
+                onClick={() => navigate("/")}
                 style={{
                   height: isFixed ? 32 : 40,
                 }}
               />
             </Box>
 
-            {/* --- Desktop Menu --- */}
             {!isTablet && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Button
-                  startIcon={<LocalOfferIcon sx={{ fontSize: 18 }} />}
                   sx={{
                     color: "#666",
                     textTransform: "none",
                     fontSize: "14px",
+                    fontWeight: 500,
                   }}
                 >
-                  Khuyến mãi
+                  Đặt tour
                 </Button>
                 <Button
                   sx={{
@@ -159,14 +159,15 @@ const Header = () => {
                   Giới thiệu
                 </Button>
                 <Button
+                  startIcon={<HelpOutlineIcon sx={{ fontSize: 18 }} />}
                   sx={{
                     color: "#666",
                     textTransform: "none",
                     fontSize: "14px",
-                    fontWeight: 500,
                   }}
+                  onClick={() => navigate("/contact")}
                 >
-                  Đặt tour
+                  Liên hệ
                 </Button>
                 <ActionButton
                   variant="outlined"
@@ -191,7 +192,6 @@ const Header = () => {
               </Box>
             )}
 
-            {/* --- Tablet (ẩn bớt) --- */}
             {isTablet && !isMobile && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Button sx={{ color: "#666", textTransform: "none" }}>
@@ -206,7 +206,6 @@ const Header = () => {
               </Box>
             )}
 
-            {/* --- Mobile: Login Button (Right) --- */}
             {isMobile && (
               <Box sx={{ position: "absolute", right: 0 }}>
                 <ActionButton
@@ -223,7 +222,6 @@ const Header = () => {
             )}
           </Toolbar>
 
-          {/* Menu phụ (ẩn khi mobile) */}
           {!isTablet && !isFixed && (
             <Box sx={{ borderTop: "1px solid #e0e0e0", py: 1 }}>
               <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
@@ -242,29 +240,151 @@ const Header = () => {
         </Container>
       </StyledAppBar>
 
-      {/* Drawer Mobile */}
       <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
-        <Box sx={{ width: 250, p: 2 }}>
-          <List>
-            {menuItems.map((item) => (
-              <ListItem button key={item.label} onClick={toggleDrawer(false)}>
-                <ListItemText primary={item.label} />
-              </ListItem>
-            ))}
+        <Box
+          sx={{
+            width: 260,
+            p: 2,
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            bgcolor: "#fafafa",
+          }}
+        >
+          <List sx={{ gap: 1, display: "flex", flexDirection: "column" }}>
+            {menuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <ListItem
+                  key={item.label}
+                  onClick={() => {
+                    if (item.path) navigate(item.path);
+                    toggleDrawer(false)();
+                  }}
+                  sx={{
+                    borderRadius: 2,
+                    bgcolor: isActive ? "#e3f2fd" : "transparent",
+                    border: isActive ? "2px solid #1976d2" : "none",
+                    "&:hover": {
+                      bgcolor: isActive ? "#e3f2fd" : "#f5f5f5",
+                    },
+                    transition: "0.2s ease",
+                  }}
+                  button
+                >
+                  <ListItemText
+                    primary={item.label}
+                    primaryTypographyProps={{
+                      fontSize: 15,
+                      fontWeight: isActive ? 600 : 400,
+                      color: isActive ? "#1976d2" : "#666",
+                    }}
+                  />
+                </ListItem>
+              );
+            })}
           </List>
+
+          <Box
+            sx={{
+              mt: "auto",
+              pt: 1,
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+            }}
+          >
+            <ListItem
+              button
+              onClick={() => {
+                navigate("/");
+                toggleDrawer(false)();
+              }}
+              sx={{
+                borderRadius: 2,
+                bgcolor: location.pathname === "/" ? "#e3f2fd" : "transparent",
+                border:
+                  location.pathname === "/" ? "2px solid #1976d2" : "none",
+                "&:hover": {
+                  bgcolor: location.pathname === "/" ? "#e3f2fd" : "#f5f5f5",
+                },
+              }}
+            >
+              <ListItemText
+                primary="Trang chủ"
+                primaryTypographyProps={{
+                  fontSize: 15,
+                  fontWeight: location.pathname === "/" ? 600 : 400,
+                  color: location.pathname === "/" ? "#1976d2" : "#666",
+                }}
+              />
+            </ListItem>
+
+            <ListItem
+              button
+              onClick={() => {
+                navigate("/contact");
+                toggleDrawer(false)();
+              }}
+              sx={{
+                borderRadius: 2,
+                bgcolor:
+                  location.pathname === "/contact" ? "#e3f2fd" : "transparent",
+                border:
+                  location.pathname === "/contact"
+                    ? "2px solid #1976d2"
+                    : "none",
+                "&:hover": {
+                  bgcolor:
+                    location.pathname === "/contact" ? "#e3f2fd" : "#f5f5f5",
+                },
+              }}
+            >
+              <ListItemText
+                primary="Liên hệ"
+                primaryTypographyProps={{
+                  fontSize: 15,
+                  fontWeight: location.pathname === "/contact" ? 600 : 400,
+                  color: location.pathname === "/contact" ? "#1976d2" : "#666",
+                }}
+              />
+            </ListItem>
+
+            <ListItem
+              button
+              onClick={() => {
+                navigate("/book-tour");
+                toggleDrawer(false)();
+              }}
+              sx={{
+                borderRadius: 2,
+                bgcolor:
+                  location.pathname === "/book-tour"
+                    ? "#e3f2fd"
+                    : "transparent",
+                border:
+                  location.pathname === "/book-tour"
+                    ? "2px solid #1976d2"
+                    : "none",
+                "&:hover": {
+                  bgcolor:
+                    location.pathname === "/book-tour" ? "#e3f2fd" : "#f5f5f5",
+                },
+              }}
+            >
+              <ListItemText
+                primary="Đặt tour"
+                primaryTypographyProps={{
+                  fontSize: 15,
+                  fontWeight: location.pathname === "/book-tour" ? 600 : 400,
+                  color:
+                    location.pathname === "/book-tour" ? "#1976d2" : "#666",
+                }}
+              />
+            </ListItem>
+          </Box>
         </Box>
       </Drawer>
-
-      {/* Menu Dropdown (Desktop) */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem onClick={handleMenuClose}>Option 1</MenuItem>
-        <MenuItem onClick={handleMenuClose}>Option 2</MenuItem>
-        <MenuItem onClick={handleMenuClose}>Option 3</MenuItem>
-      </Menu>
     </Box>
   );
 };

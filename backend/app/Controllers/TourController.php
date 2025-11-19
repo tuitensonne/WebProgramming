@@ -3,6 +3,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\TourModel;
+use App\Models\CategoryModel;
 
 class TourController extends Controller
 {
@@ -10,6 +11,7 @@ class TourController extends Controller
 
     public function __construct() {
         $this->tourModel = new TourModel();
+        $this->categoryModel = new CategoryModel();
     }
 
     /**
@@ -32,6 +34,23 @@ class TourController extends Controller
             return $this->success($tours, 'Fetched top 4 tours successfully');
         } catch (\Exception $e) {
             return $this->error('Failed to fetch tours', 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Lấy những tour category cho section
+     */
+    public function getAllTourCategory() {
+        try {
+            $categories = $this->categoryModel->getAllCategory();
+
+            if (!$categories) {
+                return $this->error('No categories found', 404);
+            }
+
+            return $this->success($categories, 'Fetched categories successfully');
+        } catch (\Exception $e) {
+            return $this->error('Failed to fetch categories', 500, $e->getMessage());
         }
     }
 }
