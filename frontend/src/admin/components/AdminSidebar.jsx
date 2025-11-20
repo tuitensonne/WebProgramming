@@ -1,179 +1,212 @@
-import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-    Drawer,
-    List,
-    ListItemButton,
-    ListItemIcon,
-    ListItemText,
-    IconButton,
-    Divider,
-    Toolbar,
-    Typography,
-} from "@mui/material";
-import {
-    Dashboard as DashboardIcon,
-    People as PeopleIcon,
-    TravelExplore as TourIcon,
-    Category as CategoryIcon,
-    Event as EventIcon,
-    BookOnline as BookOnlineIcon,
-    Article as ArticleIcon,
-    Image as ImageIcon,
-    Home as HomeIcon,
-    Flag as BannerIcon,
-    AccountBalance as FooterIcon,
-    Close as CloseIcon,
-    Menu as MenuIcon,
-} from "@mui/icons-material";
+  IconDashboard,
+  IconUsers,
+  IconMapSearch,
+  IconCategory,
+  IconCalendarEvent,
+  IconNotes,
+  IconPhoto,
+  IconHome,
+  IconFlag3,
+  IconBuilding,
+  IconUser,
+  IconBell,
+  IconMenu2,
+  IconX,
+} from "@tabler/icons-react";
 
-const drawerWidth = 240;
+export default function AdminSidebar() {
+  const location = useLocation();
 
-export default function AdminSidebar({ open, setOpen }) {
-    const location = useLocation();
-    const toggleDrawer = () => setOpen(!open);
+  const menuItems = [
+    { label: "Dashboard", icon: <IconDashboard size={20} />, path: "/admin" },
+    {
+      label: "Quản lý Người dùng",
+      icon: <IconUsers size={20} />,
+      path: "/admin/users",
+    },
+    {
+      label: "Quản lý Tour",
+      icon: <IconMapSearch size={20} />,
+      path: "/admin/tours",
+    },
+    {
+      label: "Danh mục Tour",
+      icon: <IconCategory size={20} />,
+      path: "/admin/tour-categories",
+    },
+    {
+      label: "Lịch trình Tour",
+      icon: <IconCalendarEvent size={20} />,
+      path: "/admin/tour-itineraries",
+    },
+    {
+      label: "Quản lý Bài viết",
+      icon: <IconNotes size={20} />,
+      path: "/admin/posts",
+    },
+    {
+      label: "Quản lý Media",
+      icon: <IconPhoto size={20} />,
+      path: "/admin/media",
+    },
+    {
+      label: "Trang chủ / Sections",
+      icon: <IconHome size={20} />,
+      path: "/admin/landing-page",
+    },
+    {
+      label: "Quản lý Banner",
+      icon: <IconFlag3 size={20} />,
+      path: "/admin/banners",
+    },
+    {
+      label: "Quản lý Footer",
+      icon: <IconBuilding size={20} />,
+      path: "/admin/footer",
+    },
+  ];
 
-    const menuItems = [
-        { label: "Dashboard", icon: <DashboardIcon />, path: "/admin" },
-        {
-            label: "Quản lý Người dùng",
-            icon: <PeopleIcon />,
-            path: "/admin/users",
-        },
-        { label: "Quản lý Tour", icon: <TourIcon />, path: "/admin/tours" },
-        {
-            label: "Danh mục Tour",
-            icon: <CategoryIcon />,
-            path: "/admin/tour-categories",
-        },
-        {
-            label: "Lịch trình Tour",
-            icon: <EventIcon />,
-            path: "/admin/tour-itineraries",
-        },
-        {
-            label: "Quản lý Đặt tour",
-            icon: <BookOnlineIcon />,
-            path: "/admin/bookings",
-        },
-        {
-            label: "Quản lý Bài viết",
-            icon: <ArticleIcon />,
-            path: "/admin/posts",
-        },
-        { label: "Quản lý Media", icon: <ImageIcon />, path: "/admin/media" },
-        {
-            label: "Trang chủ / Sections",
-            icon: <HomeIcon />,
-            path: "/admin/landing-page",
-        },
-        {
-            label: "Quản lý Banner",
-            icon: <BannerIcon />,
-            path: "/admin/banners",
-        },
-        {
-            label: "Quản lý Footer",
-            icon: <FooterIcon />,
-            path: "/admin/footer",
-        },
-    ];
+  return (
+    <>
+      {/* MOBILE BUTTON */}
+      <button
+        className="btn btn-dark d-md-none position-fixed m-3 z-3"
+        type="button"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#adminSidebar"
+      >
+        <IconMenu2 size={24} />
+      </button>
 
-    return (
-        <>
-            <Drawer
-                variant="permanent"
-                sx={{
-                    width: open ? drawerWidth : 60,
-                    flexShrink: 0,
-                    "& .MuiDrawer-paper": {
-                        width: open ? drawerWidth : 60,
-                        overflowX: "hidden",
-                        whiteSpace: "nowrap",
-                        transition: "width 0.3s",
-                        boxSizing: "border-box",
-                        backgroundColor: "#fff",
-                        borderRight: "1px solid #ddd",
-                        paddingLeft: open ? 1 : 0.5,
-                        paddingRight: open ? 1 : 0.5,
-                    },
-                }}
-            >
-                <Toolbar
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: open ? "space-between" : "center",
-                        px: 1,
-                    }}
+      {/* SIDEBAR */}
+      <div
+        className="offcanvas offcanvas-start bg-dark text-white"
+        tabIndex="-1"
+        id="adminSidebar"
+        style={{ width: "260px" }}
+      >
+        <div className="offcanvas-header">
+          <h5 className="offcanvas-title">Tours Admin</h5>
+
+          <button
+            type="button"
+            className="btn btn-dark"
+            data-bs-dismiss="offcanvas"
+          >
+            <IconX size={20} />
+          </button>
+        </div>
+
+        <div className="offcanvas-body d-flex flex-column">
+          <ul className="nav flex-column">
+            {menuItems.map((item) => (
+              <li className="nav-item" key={item.path}>
+                <Link
+                  to={item.path}
+                  className={
+                    "nav-link text-white d-flex align-items-center gap-2 " +
+                    (location.pathname === item.path ? "active fw-bold" : "")
+                  }
+                  data-bs-dismiss="offcanvas"
                 >
-                    {open && (
-                        <Typography
-                            variant="h6"
-                            noWrap
-                            sx={{ color: "#1976d2" }}
-                        >
-                            Tours Admin
-                        </Typography>
-                    )}
+                  {item.icon}
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
 
-                    {/* <IconButton
-                        onClick={toggleDrawer}
-                        sx={{ color: "#1976d2" }}
-                    >
-                        {open ? <CloseIcon /> : <MenuIcon />}
-                    </IconButton> */}
-                </Toolbar>
+          {/* FOOTER MENU */}
+          <div className="mt-auto pt-3 border-top border-secondary">
+            <a className="nav-link text-white d-flex align-items-center gap-2">
+              <IconBell size={20} />
+              Thông báo
+            </a>
 
-                <Divider />
+            <div className="dropup mt-3">
+              <a
+                className="nav-link dropdown-toggle d-flex align-items-center gap-2 text-white"
+                data-bs-toggle="dropdown"
+                href="#"
+              >
+                <span className="avatar avatar-sm bg-secondary">
+                  <IconUser size={18} />
+                </span>
+                Admin
+              </a>
 
-                <List>
-                    {menuItems.map((item) => {
-                        const isActive = location.pathname === item.path;
+              <div className="dropdown-menu dropdown-menu-end">
+                <a className="dropdown-item">Hồ sơ</a>
+                <a className="dropdown-item">Cài đặt</a>
+                <div className="dropdown-divider"></div>
+                <a className="dropdown-item">Đăng xuất</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                        return (
-                            <ListItemButton
-                                key={item.label}
-                                component={Link}
-                                to={item.path}
-                                selected={isActive}
-                                sx={{
-                                    color: "#1976d2",
-                                    mb: 0.5,
-                                    borderRadius: 1,
-                                    justifyContent: open ? "initial" : "center",
-                                    px: 2,
-                                    "&.Mui-selected": {
-                                        backgroundColor: "#ff7043",
-                                        color: "#fff",
-                                    },
-                                    "&:hover": {
-                                        backgroundColor: "#ffe0d6",
-                                    },
-                                }}
-                            >
-                                <ListItemIcon
-                                    sx={{
-                                        color: isActive ? "#fff" : "#1976d2",
-                                        minWidth: 0,
-                                        mr: open ? 2 : "auto",
-                                        justifyContent: "center",
-                                    }}
-                                >
-                                    {item.icon}
-                                </ListItemIcon>
+      {/* DESKTOP SIDEBAR */}
+      <aside
+        className="bg-dark text-white d-none d-md-flex flex-column p-3"
+        style={{
+          width: "260px",
+          position: "fixed",
+          top: 0,
+          bottom: 0,
+          left: 0,
+        }}
+      >
+        <h4 className="text-white mb-4">Tours Admin</h4>
 
-                                {open && (
-                                    <ListItemText
-                                        primary={item.label}
-                                        sx={{ whiteSpace: "nowrap" }}
-                                    />
-                                )}
-                            </ListItemButton>
-                        );
-                    })}
-                </List>
-            </Drawer>
-        </>
-    );
+        {/* MAIN MENU */}
+        <ul className="nav flex-column">
+          {menuItems.map((item) => (
+            <li className="nav-item" key={item.path}>
+              <Link
+                to={item.path}
+                className={
+                  "nav-link text-white d-flex align-items-center gap-2 " +
+                  (location.pathname === item.path ? "active fw-bold" : "")
+                }
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+
+        {/* FOOTER */}
+        <div className="mt-auto pt-3 border-top border-secondary">
+          <a className="nav-link text-white d-flex align-items-center gap-2">
+            <IconBell size={20} />
+            Thông báo
+          </a>
+
+          <div className="dropup mt-3">
+            <a
+              className="nav-link dropdown-toggle d-flex align-items-center gap-2 text-white"
+              data-bs-toggle="dropdown"
+              href="#"
+            >
+              <span className="avatar avatar-sm bg-secondary">
+                <IconUser size={18} />
+              </span>
+              Admin
+            </a>
+
+            <div className="dropdown-menu dropdown-menu-end">
+              <a className="dropdown-item">Hồ sơ</a>
+              <a className="dropdown-item">Cài đặt</a>
+              <div className="dropdown-divider"></div>
+              <a className="dropdown-item">Đăng xuất</a>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
 }

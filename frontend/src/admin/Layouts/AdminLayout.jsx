@@ -1,81 +1,81 @@
-import React, { useState, createContext } from "react";
+import React, { useState, createContext, useMemo, useCallback } from "react";
 import { Outlet } from "react-router-dom";
-
-import AdminSidebar from "../components/AdminSidebar";
-import AdminHeader from "../components/AdminHeader";
-
 import AlertNotification from "../components/Alert";
 import ConfirmModal from "../components/ConfirmModal";
+import AdminHeader from "../components/AdminHeader";
+import AdminSidebar from "../components/AdminSidebar";
 
 export const UIContext = createContext();
 
 export default function AdminLayout() {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [toast, setToast] = useState({
-        show: false,
-        message: "",
-        type: "success",
-    });
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
-    const [confirm, setConfirm] = useState({
-        show: false,
-        title: "",
-        message: "",
-        onConfirm: null,
-    });
+  const [confirm, setConfirm] = useState({
+    show: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
 
-    const showToast = (message, type = "success") => {
-        setToast({ show: true, message, type });
-        setTimeout(() => {
-            setToast({ show: false, message: "", type });
-        }, 3500);
-    };
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type }), 3500);
+  }, []);
 
-    const showConfirm = (message, onConfirm, title = "Xác nhận hành động") => {
-        setConfirm({ show: true, title, message, onConfirm });
-    };
+  const showConfirm = useCallback(
+    (message, onConfirm, title = "Xác nhận hành động") => {
+      setConfirm({ show: true, title, message, onConfirm });
+    },
+    []
+  );
 
-    const handleConfirm = () => {
-        const fn = confirm.onConfirm;
-        setConfirm({ show: false, title: "", message: "", onConfirm: null });
-        if (fn) fn();
-    };
+  const handleConfirm = () => {
+    if (confirm.onConfirm) confirm.onConfirm();
+    setConfirm({ show: false, title: "", message: "", onConfirm: null });
+  };
 
-    const handleCancel = () => {
-        setConfirm({ show: false, title: "", message: "", onConfirm: null });
-    };
+  const handleCancel = () =>
+    setConfirm({ show: false, title: "", message: "", onConfirm: null });
 
-    return (
-        <UIContext.Provider value={{ showToast, showConfirm }}>
-            <div className="page" style={{ display: "flex" }}>
-                <AdminSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+  const contextValue = useMemo(
+    () => ({ showToast, showConfirm }),
+    [showToast, showConfirm]
+  );
 
-                <div
-                    className="page-wrapper"
-                    style={{
-                        flexGrow: 1,
-                        transition: "margin-left 0.3s",
-                        marginLeft: sidebarOpen ? 240 : 0,
-                    }}
-                >
-                    <AdminHeader
-                        sidebarOpen={sidebarOpen}
-                        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-                    />
+  return (
+    <UIContext.Provider value={contextValue}>
+      <div className="page d-flex">
+        {/* SIDEBAR RESPONSIVE */}
+        {/* <AdminSidebar /> */}
 
-                    <div className="page-body container-xl">
-                        <Outlet />
-                    </div>
-                </div>
-                <AlertNotification {...toast} />
-                <ConfirmModal
-                    show={confirm.show}
-                    title={confirm.title}
-                    message={confirm.message}
-                    onConfirm={handleConfirm}
-                    onCancel={handleCancel}
-                />
+        {/* MAIN WRAPPER */}
+        <div className="page-wrapper flex-grow-1">
+          {/* Header nếu cần */}
+          {/* <AdminHeader /> */}
+
+          {/* Nội dung */}
+          <div className="page-body">
+            <div className="container-xl">
+              <Outlet />
             </div>
-        </UIContext.Provider>
-    );
+          </div>
+        </div>
+
+        {/* Toast & Modal */}
+        <AlertNotification {...toast} />
+
+        <ConfirmModal
+          show={confirm.show}
+          title={confirm.title}
+          message={confirm.message}
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+        />
+      </div>
+    </UIContext.Provider>
+  );
 }

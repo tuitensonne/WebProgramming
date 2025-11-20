@@ -8,23 +8,23 @@ import AdminUserManagement from "./pages/AdminUserManagement";
 import FooterAdmin from "./pages/FooterAdmin";
 
 const adminRouter = createBrowserRouter([
-    {
-        path: "/admin",
-        element: <AdminLayout />,
-        children: [
-            { index: true, element: <LandingPageAdmin /> },
-            { path: "users", element: <AdminUserManagement /> },
-            { path: "footer", element: <FooterAdmin /> },
-            { path: "landing-page", element: <LandingPageAdmin /> },
-        ],
-    },
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      { index: true, element: <LandingPageAdmin /> },
+      { path: "users", element: <AdminUserManagement /> },
+      { path: "footer", element: <FooterAdmin /> },
+      { path: "landing-page", element: <LandingPageAdmin /> },
+    ],
+  },
 ]);
 
 export default function AdminApp() {
-    useEffect(() => {
-        import("@tabler/core/dist/css/tabler.min.css");
-        import("@tabler/core/dist/js/tabler.min.js");
-    }, []);
+  useEffect(() => {
+    import("@tabler/core/dist/css/tabler.min.css");
+    import("@tabler/core/dist/js/tabler.min.js");
+  }, []);
 
-    return <RouterProvider router={adminRouter} />;
+  return <RouterProvider router={adminRouter} />;
 }

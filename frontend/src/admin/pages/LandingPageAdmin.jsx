@@ -10,7 +10,6 @@ import {
   IconX,
   IconArrowLeft,
   IconArrowRight,
-  IconGripVertical,
 } from "@tabler/icons-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import LoadingComponent from "../components/LoadingComponent";
@@ -106,13 +105,14 @@ const layoutOptions = [
   },
 ];
 
-const AddSectionModal = ({ show, onClose, onSubmit }) => {
+const AddSectionModal = ({ show, onClose, mode = "add", editData = null }) => {
   const [step, setStep] = useState(1);
   const [selectedLayout, setSelectedLayout] = useState(null);
   const [sectionData, setSectionData] = useState({});
   const [items, setItems] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
+  const { showToast } = useContext(UIContext);
 
   useEffect(() => {
     if (show) {
@@ -120,11 +120,27 @@ const AddSectionModal = ({ show, onClose, onSubmit }) => {
     }
   }, [show]);
 
+  useEffect(() => {
+    if (show && mode === "edit" && editData) {
+      const layout = layoutOptions.find((l) => l.id === editData.type);
+      setSelectedLayout(layout);
+      setSectionData({
+        title: editData.title,
+        subtitle: editData.subtitle,
+        description: editData.description,
+        background_color: editData.background_color,
+        image_url: editData.image_url,
+        category_id: editData.category_id,
+      });
+      setItems(editData.items || []);
+      setStep(2);
+    }
+  }, [show, editData, mode]);
+
   const fetchCategories = async () => {
     try {
       const res = await api.get("tours/categories");
       if (res.data?.success) {
-        console.log(res.data.data);
         setCategories(res.data.data || []);
       }
     } catch (err) {
@@ -175,7 +191,7 @@ const AddSectionModal = ({ show, onClose, onSubmit }) => {
   };
 
   const handleAddItem = () => {
-    const newItem = { id: Date.now(), order: items.length + 1 };
+    const newItem = {};
     selectedLayout.itemFields.forEach((field) => {
       newItem[field.name] = "";
     });
@@ -192,22 +208,28 @@ const AddSectionModal = ({ show, onClose, onSubmit }) => {
     );
   };
 
-  const handleItemDragEnd = (result) => {
-    if (!result.destination) return;
-    const newItems = Array.from(items);
-    const [moved] = newItems.splice(result.source.index, 1);
-    newItems.splice(result.destination.index, 0, moved);
-    const updated = newItems.map((item, idx) => ({ ...item, order: idx + 1 }));
-    setItems(updated);
-  };
-
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      console.log(sectionData, items);
+      const payload = {
+        ...sectionData,
+        items: [...items],
+        type: selectedLayout.id,
+        page_id: 1,
+      };
+
+      if (mode === "edit") {
+        await api.put(`sections/${editData.id}`, payload);
+        showToast("Đã chỉnh sửa section thành công!", "success");
+      } else {
+        await api.post("sections", payload);
+        showToast("Thêm section thành công!", "success");
+      }
+
       handleClose();
     } catch (error) {
       console.error(error);
+      showToast("Đã có lỗi xảy ra!", "danger");
     } finally {
       setSubmitting(false);
     }
@@ -473,128 +495,106 @@ const AddSectionModal = ({ show, onClose, onSubmit }) => {
             Chưa có item nào. Nhấn "Thêm Item" để bắt đầu.
           </div>
         ) : (
-          <DragDropContext onDragEnd={handleItemDragEnd}>
-            <Droppable droppableId="items-list">
-              {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef}>
-                  {items.map((item, index) => (
-                    <Draggable
-                      key={item.id.toString()}
-                      draggableId={item.id.toString()}
-                      index={index}
-                    >
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          className="card mb-3"
-                        >
-                          <div className="card-header d-flex justify-content-between align-items-center">
-                            <div className="d-flex align-items-center gap-2">
-                              <div {...provided.dragHandleProps}>
-                                <IconGripVertical
-                                  size={20}
-                                  className="text-muted"
-                                  style={{ cursor: "grab" }}
-                                />
-                              </div>
-                              <strong>Item #{index + 1}</strong>
-                            </div>
-                            <button
-                              type="button"
-                              className="btn btn-outline-danger btn-sm"
-                              onClick={() => handleRemoveItem(item.id)}
-                            >
-                              <IconTrash size={16} />
-                            </button>
-                          </div>
-                          <div className="card-body">
-                            <div className="row">
-                              {selectedLayout.itemFields.map((field) => (
-                                <div
-                                  key={field.name}
-                                  className={
-                                    field.type === "textarea"
-                                      ? "col-12 mb-3"
-                                      : "col-md-6 mb-3"
-                                  }
-                                >
-                                  <label className="form-label">
-                                    {field.label}
-                                    {field.required && (
-                                      <span className="text-danger">*</span>
-                                    )}
-                                  </label>
-                                  {field.type === "textarea" ? (
-                                    <textarea
-                                      className="form-control"
-                                      rows="3"
-                                      value={item[field.name] || ""}
-                                      onChange={(e) =>
-                                        handleItemChange(
-                                          item.id,
-                                          field.name,
-                                          e.target.value
-                                        )
-                                      }
-                                      required={field.required}
-                                    />
-                                  ) : field.type === "color" ? (
-                                    <div className="input-group">
-                                      <input
-                                        type="color"
-                                        className="form-control form-control-color"
-                                        value={item[field.name] || "#000000"}
-                                        onChange={(e) =>
-                                          handleItemChange(
-                                            item.id,
-                                            field.name,
-                                            e.target.value
-                                          )
-                                        }
-                                      />
-                                      <input
-                                        type="text"
-                                        className="form-control"
-                                        value={item[field.name] || ""}
-                                        onChange={(e) =>
-                                          handleItemChange(
-                                            item.id,
-                                            field.name,
-                                            e.target.value
-                                          )
-                                        }
-                                        placeholder="#000000"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <input
-                                      type="text"
-                                      className="form-control"
-                                      value={item[field.name] || ""}
-                                      onChange={(e) =>
-                                        handleItemChange(
-                                          item.id,
-                                          field.name,
-                                          e.target.value
-                                        )
-                                      }
-                                      required={field.required}
-                                    />
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
+          <div>
+            {items.map((item, index) => (
+              <div className="card mb-3" key={item.id}>
+                <div className="card-header d-flex justify-content-between align-items-center">
+                  <div className="d-flex align-items-center gap-2">
+                    <strong>Item #{index + 1}</strong>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={() => handleRemoveItem(item.id)}
+                  >
+                    <IconTrash size={16} />
+                  </button>
                 </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+
+                <div className="card-body">
+                  <div className="row">
+                    {selectedLayout.itemFields.map((field) => (
+                      <div
+                        key={field.name}
+                        className={
+                          field.type === "textarea"
+                            ? "col-12 mb-3"
+                            : "col-md-6 mb-3"
+                        }
+                      >
+                        <label className="form-label">
+                          {field.label}
+                          {field.required && (
+                            <span className="text-danger">*</span>
+                          )}
+                        </label>
+
+                        {field.type === "textarea" ? (
+                          <textarea
+                            className="form-control"
+                            rows="3"
+                            value={item[field.name] || ""}
+                            onChange={(e) =>
+                              handleItemChange(
+                                item.id,
+                                field.name,
+                                e.target.value
+                              )
+                            }
+                            required={field.required}
+                          />
+                        ) : field.type === "color" ? (
+                          <div className="input-group">
+                            <input
+                              type="color"
+                              className="form-control form-control-color"
+                              value={item[field.name] || "#000000"}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  item.id,
+                                  field.name,
+                                  e.target.value
+                                )
+                              }
+                            />
+
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={item[field.name] || ""}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  item.id,
+                                  field.name,
+                                  e.target.value
+                                )
+                              }
+                              placeholder="#000000"
+                            />
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={item[field.name] || ""}
+                            onChange={(e) =>
+                              handleItemChange(
+                                item.id,
+                                field.name,
+                                e.target.value
+                              )
+                            }
+                            required={field.required}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     );
@@ -797,12 +797,12 @@ const AddSectionModal = ({ show, onClose, onSubmit }) => {
                         className="spinner-border spinner-border-sm me-2"
                         role="status"
                       ></span>
-                      Đang tạo...
+                      {mode === "edit" ? "Đang lưu..." : "Đang tạo..."}
                     </>
                   ) : (
                     <>
                       <IconCheck size={18} className="me-1" />
-                      Tạo
+                      {mode === "edit" ? "Lưu" : "Tạo"}
                     </>
                   )}
                 </button>
@@ -816,14 +816,21 @@ const AddSectionModal = ({ show, onClose, onSubmit }) => {
 };
 
 export default function LandingPageAdmin() {
-  const navigate = useNavigate();
   const { showToast, showConfirm } = useContext(UIContext);
   const [sections, setSections] = useState([]);
   const [originalSections, setOriginalSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [changed, setChanged] = useState(false);
+
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editModalData, setEditModalData] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const showEditSection = (section) => {
+    setEditModalData(section);
+    setShowEditModal(true);
+  };
 
   useEffect(() => {
     fetchSections();
@@ -880,7 +887,6 @@ export default function LandingPageAdmin() {
         const res = await api.delete(`/sections/${id}`);
         if (res.data?.success) {
           setSections((prev) => prev.filter((s) => s.id !== id));
-          setChanged(true);
           showToast("Đã xoá section thành công!", "success");
         } else {
           showToast(
@@ -893,31 +899,6 @@ export default function LandingPageAdmin() {
         showToast("Có lỗi xảy ra khi xoá section!", "danger");
       }
     });
-  };
-
-  const handleAddSection = async (data) => {
-    try {
-      const newOrder = sections.length + 1;
-      const payload = {
-        page_id: 1,
-        section_type: data.section_type,
-        order: newOrder,
-        is_active: true,
-        ...data.content,
-      };
-
-      const res = await api.post("/sections", payload);
-
-      if (res.data?.success) {
-        showToast("Đã thêm section mới thành công!", "success");
-        fetchSections();
-      } else {
-        showToast("Thêm section thất bại!", "danger");
-      }
-    } catch (error) {
-      console.error(error);
-      showToast("Có lỗi xảy ra khi thêm section!", "danger");
-    }
   };
 
   if (loading) return <LoadingComponent />;
@@ -958,11 +939,28 @@ export default function LandingPageAdmin() {
         </div>
       </div>
 
-      <AddSectionModal
-        show={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSubmit={handleAddSection}
-      />
+      {showAddModal && (
+        <AddSectionModal
+          show={showAddModal}
+          onClose={() => {
+            setShowAddModal(false);
+            fetchSections();
+          }}
+          mode="add"
+        />
+      )}
+
+      {showEditModal && (
+        <AddSectionModal
+          show={showEditModal}
+          onClose={() => {
+            setShowAddModal(false);
+            fetchSections();
+          }}
+          mode="edit"
+          editData={editModalData}
+        />
+      )}
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="sections">
@@ -1018,9 +1016,7 @@ export default function LandingPageAdmin() {
                               <div className="d-flex gap-2">
                                 <button
                                   className="btn btn-outline-primary btn-sm"
-                                  onClick={() =>
-                                    navigate(`/admin/sections/${section.id}`)
-                                  }
+                                  onClick={() => showEditSection(section)}
                                 >
                                   <IconEdit size={16} />
                                 </button>
