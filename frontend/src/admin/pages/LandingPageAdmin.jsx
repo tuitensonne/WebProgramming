@@ -156,8 +156,8 @@ const AddSectionModal = ({ show, onClose, mode = "add", editData = null }) => {
   };
 
   const handleClose = () => {
-    resetModal();
     onClose();
+    resetModal();
   };
 
   const handleLayoutSelect = (layout) => {
@@ -179,10 +179,12 @@ const AddSectionModal = ({ show, onClose, mode = "add", editData = null }) => {
   };
 
   const handlePrevStep = () => {
-    if (step === 3) {
-      setStep(2);
-    } else if (step === 2) {
-      setStep(1);
+    if (mode === "add") {
+      if (step === 3) {
+        setStep(2);
+      } else if (step === 2) {
+        setStep(1);
+      }
     }
   };
 
@@ -763,16 +765,27 @@ const AddSectionModal = ({ show, onClose, mode = "add", editData = null }) => {
                 Hủy
               </button>
 
-              {step > 1 && (
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  onClick={handlePrevStep}
-                >
-                  <IconArrowLeft size={18} className="me-1" />
-                  Quay lại
-                </button>
-              )}
+              {step > 1 &&
+                (mode === "edit" && step === 2 ? (
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={handlePrevStep}
+                    disabled="true"
+                  >
+                    <IconArrowLeft size={18} className="me-1" />
+                    Quay lại
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={handlePrevStep}
+                  >
+                    <IconArrowLeft size={18} className="me-1" />
+                    Quay lại
+                  </button>
+                ))}
 
               {step < totalSteps ? (
                 <button
@@ -954,7 +967,7 @@ export default function LandingPageAdmin() {
         <AddSectionModal
           show={showEditModal}
           onClose={() => {
-            setShowAddModal(false);
+            setShowEditModal(false);
             fetchSections();
           }}
           mode="edit"

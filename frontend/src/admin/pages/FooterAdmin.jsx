@@ -163,7 +163,6 @@ export default function FooterAdmin() {
     >
       <div className="container-xl my-4">
         <div className="row g-4">
-          {/* Left Form */}
           <div className="col-md-4">
             <div className="card shadow-sm">
               <div className="card-header">
@@ -226,7 +225,6 @@ export default function FooterAdmin() {
             </div>
           </div>
 
-          {/* Right Preview */}
           <div className="col-md-8">
             <div className="card shadow-sm">
               <div className="card-header bg-dark text-white text-center fw-bold">

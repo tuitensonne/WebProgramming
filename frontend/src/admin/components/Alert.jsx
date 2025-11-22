@@ -14,7 +14,7 @@ export default function AlertNotification({
       const timer = setTimeout(() => {
         setVisible(false);
         if (onClose) onClose();
-      }, 3000);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [show, onClose]);

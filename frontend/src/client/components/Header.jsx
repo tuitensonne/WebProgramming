@@ -171,6 +171,7 @@ const Header = () => {
                 </Button>
                 <ActionButton
                   variant="outlined"
+                  onClick={() => navigate("/register")}
                   sx={{
                     borderColor: "#1976d2",
                     color: "#1976d2",
@@ -182,6 +183,7 @@ const Header = () => {
                 </ActionButton>
                 <ActionButton
                   variant="contained"
+                  onClick={() => navigate("/login")}
                   sx={{
                     backgroundColor: "#1976d2",
                     padding: isFixed ? "6px 18px" : "10px 24px",

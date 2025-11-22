@@ -42,26 +42,51 @@ class SectionController extends Controller
     /**
      * Tạo mới section
      */
-    // public function create()
-    // {
-    //     $data = $_POST ?: json_decode(file_get_contents('php://input'), true);
+    public function create()
+    {
+        $data = $_POST ?: json_decode(file_get_contents('php://input'), true);
 
-    //     if (empty($data['page_id']) || empty($data['name'])) {
-    //         return $this->error('Missing required fields: page_id, name', 400);
-    //     }
+        if (empty($data['page_id'])) {
+            return $this->error('Missing required fields: page_id, name', 400);
+        }
 
-    //     try {
-    //         $id = $this->sectionModel->create($data);
+        try {
+            $id = $this->sectionModel->create($data);
 
-    //         if (!$id) {
-    //             return $this->error('Failed to create section', 500);
-    //         }
+            if (!$id) {
+                return $this->error('Failed to create section', 500);
+            }
 
-    //         return $this->success(['id' => $id], 'Section created successfully');
-    //     } catch (\Exception $e) {
-    //         return $this->error('Server error', 500, $e->getMessage());
-    //     }
-    // }
+            return $this->success(['id' => $id], 'Section created successfully');
+        } catch (\Exception $e) {
+            return $this->error('Server error', 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Tạo mới section
+     */
+    public function update($id)
+    {        
+        if (!$id || !is_numeric($id)) {
+            return $this->error("Invalid section ID", 400);
+        }
+
+        $data = $_POST ?: json_decode(file_get_contents('php://input'), true);
+
+        try {
+            $result = $this->sectionModel->update((int) $id, $data);
+
+            if (!$result) {
+                return $this->error('Failed to update section', 500);
+            }
+
+            return $this->success(['id' => $data['id']], 'Section updated successfully');
+        } catch (\Exception $e) {
+            return $this->error('Server error', 500, $e->getMessage());
+        }
+    }
+
 
     /**
      * Xóa section theo ID

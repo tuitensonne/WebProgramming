@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // ======= END CORS CONFIG =======
 
 require_once dirname(__DIR__) . '/app/Core/Autoloader.php';
+require __DIR__ . '/../vendor/autoload.php';
 require_once dirname(__DIR__) . '/app/config/env.php';
 loadEnv(dirname(__DIR__) . '/.env');
 require_once dirname(__DIR__) . '/app/Core/Router.php';
@@ -20,6 +21,8 @@ use App\Controllers\BannerController;
 use App\Controllers\SectionController;
 use App\Controllers\FooterController;
 use App\Controllers\TourController;
+use App\Controllers\ContactController;
+
 $router = new Router();
 
 // ======= ROUTES =======
@@ -43,7 +46,8 @@ $router->put('/footers/{id}/places', [FooterController::class, 'updatePlaces']);
  */
 // $router->get('/sections', [SectionController::class, 'index']);                  
 // $router->get('/sections/{id}', [SectionController::class, 'show']);              
-$router->post('/sections', [SectionController::class, 'create']);         
+$router->post('/sections', [SectionController::class, 'create']);           
+$router->put('/sections/{id}', [SectionController::class, 'update']);         
 $router->delete('/sections/{id}', [SectionController::class, 'delete']);         
 $router->get('/pages/{pageId}/sections', [SectionController::class, 'getByPage']); 
 $router->put('/sections/reorder', [SectionController::class, 'reorder'] );
@@ -57,7 +61,30 @@ $router->post('/comments', [CommentController::class, 'create']);
  */
 $router->get('/tours/top', [TourController::class, 'getTopToursByCategory']);
 $router->get('/tours/categories', [TourController::class, 'getAllTourCategory']);
-// ======= END ROUTES =======
 
+/**
+ * Contact routes
+ */
+$router->get('/contacts', [ContactController::class, 'getAllContacts']);
+$router->delete('/contacts/{id}', [ContactController::class, 'delete']);
+$router->put('/contacts/{id}/status', [ContactController::class, 'updateStatus']);
+$router->post('/contacts/{id}/replyMail', [ContactController::class, 'replyMail']);
+$router->post('/contacts', [ContactController::class, 'create']);
+
+/**
+ * Auth routes
+ */
+$router->post('/auth/signup', [AuthController::class, 'signup']);
+$router->post('/auth/login', [AuthController::class, 'login']);
+
+/**
+ * User routes
+ */
+// $router->get('/users', [UserController::class, 'list']);
+// $router->get('/users/{id}', [UserController::class, 'getById']);
+// $router->put('/users/{id}', [UserController::class, 'update']);
+// $router->delete('/users/{id}', [UserController::class, 'delete']);
+
+// ======= END ROUTES =======
 
 $router->dispatch();

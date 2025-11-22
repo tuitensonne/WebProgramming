@@ -6,6 +6,7 @@ import LandingPageAdmin from "./pages/LandingPageAdmin";
 
 import AdminUserManagement from "./pages/AdminUserManagement";
 import FooterAdmin from "./pages/FooterAdmin";
+import ContactPage from "./pages/ContactAdmin";
 
 const adminRouter = createBrowserRouter([
   {
@@ -16,6 +17,7 @@ const adminRouter = createBrowserRouter([
       { path: "users", element: <AdminUserManagement /> },
       { path: "footer", element: <FooterAdmin /> },
       { path: "landing-page", element: <LandingPageAdmin /> },
+      { path: "contact", element: <ContactPage /> },
     ],
   },
 ]);

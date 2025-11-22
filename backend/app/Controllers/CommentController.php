@@ -11,7 +11,7 @@ class CommentController extends Controller
         $this->commentModel = new CommentModel();
     }
 
-    public function getThreeHighestRatedComments(): void {
+    public function getThreeHighestRatedComments() {
         try {
             $comments = $this->commentModel->getCommentWithHighestRating();
 

@@ -26,7 +26,7 @@ const LandingPage = () => {
     const fetchSections = async () => {
       try {
         const res = await api.get("pages/1/sections");
-        console.log(res.data)
+        console.log(res.data);
         if (res.data?.success) {
           setSections(res.data.data);
         } else {
@@ -42,7 +42,7 @@ const LandingPage = () => {
     fetchSections();
   }, []);
 
-  if (loading) return <LoadingComponent></LoadingComponent>
+  if (loading) return <LoadingComponent></LoadingComponent>;
 
   return (
     <>
@@ -58,7 +58,6 @@ const LandingPage = () => {
       ) : (
         <p>Không có nội dung nào để hiển thị.</p>
       )}
-
     </>
   );
 };
