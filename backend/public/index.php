@@ -22,6 +22,7 @@ use App\Controllers\SectionController;
 use App\Controllers\FooterController;
 use App\Controllers\TourController;
 use App\Controllers\ContactController;
+use App\Controllers\AdminUserController;
 
 $router = new Router();
 
@@ -77,14 +78,14 @@ $router->post('/contacts', [ContactController::class, 'create']);
 $router->post('/auth/signup', [AuthController::class, 'signup']);
 $router->post('/auth/login', [AuthController::class, 'login']);
 
-/**
- * User routes
- */
-// $router->get('/users', [UserController::class, 'list']);
-// $router->get('/users/{id}', [UserController::class, 'getById']);
-// $router->put('/users/{id}', [UserController::class, 'update']);
-// $router->delete('/users/{id}', [UserController::class, 'delete']);
 
+/**
+ * Admin User Management routes (Yêu cầu quyền 'admin')
+ */
+$router->get('/admin/users', [AdminUserController::class, 'index']);
+$router->put('/admin/users/{id}', [AdminUserController::class, 'updateUserInfo']);
+$router->put('/admin/users/{id}/status', [AdminUserController::class, 'toggleStatus']);
+$router->put('/admin/users/{id}/reset-password', [AdminUserController::class, 'resetPassword']);
 // ======= END ROUTES =======
 
 $router->dispatch();
