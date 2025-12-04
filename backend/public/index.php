@@ -23,6 +23,7 @@ use App\Controllers\FooterController;
 use App\Controllers\TourController;
 use App\Controllers\ContactController;
 use App\Controllers\AdminUserController;
+use App\Controllers\CommentController;
 
 $router = new Router();
 
@@ -55,7 +56,7 @@ $router->put('/sections/reorder', [SectionController::class, 'reorder'] );
 /**
  * Comment routes
  */
-$router->post('/comments', [CommentController::class, 'create']);
+$router->get('/comments', [CommentController::class, 'getAllComments']);
 
 /**
  * Tour routes

@@ -111,67 +111,76 @@ class UserModel extends Database
         $sortDirection = (strtoupper($params['sortDirection']) === 'DESC') ? 'DESC' : 'ASC';
 
         $sql = "SELECT id, fullName, email, phone, isActive, createdAt, updatedAt, avatarUrl 
-                FROM User 
-                WHERE role = 'user'"; 
-        $conditions = [];
-        $executeParams = []; // Mảng tham số sử dụng dấu : làm key
+                FROM `User`
+                WHERE role = 'user'";
 
-        // Lọc trạng thái
+        $conditions = [];
+        $executeParams = [];
+
+        // 1. Filter active
         if ($params['activeFilter'] !== 'all') {
             $conditions[] = "isActive = :isActiveStatus";
             $executeParams[':isActiveStatus'] = ($params['activeFilter'] === 'active' ? 1 : 0);
         }
 
-        // Logic Tìm kiếm nâng cao (Đa từ khóa và Case-Insensitive)
+        // 2. Advanced Search Fix
         if (!empty($params['search'])) {
             $searchTerms = explode(' ', strtolower(trim($params['search'])));
             $searchConditions = [];
-            $searchIndex = 0;
+            $i = 0;
 
             foreach ($searchTerms as $term) {
                 if (empty($term)) continue;
 
-                $paramKey = ':search' . $searchIndex; 
-                $searchPattern = '%' . $term . '%';
-                $executeParams[$paramKey] = $searchPattern; 
+                // Tạo key UNIQUE riêng cho từng field
+                $fullNameKey = ":fullName$i";
+                $emailKey    = ":email$i";
+                $phoneKey    = ":phone$i";
 
-                // Sử dụng tên tham số CÓ DẤU : trong chuỗi SQL
+                // Bind từng param
+                $executeParams[$fullNameKey] = "%$term%";
+                $executeParams[$emailKey]    = "%$term%";
+                $executeParams[$phoneKey]    = "%$term%";
+
                 $searchConditions[] = "(
-                    LOWER(fullName) LIKE $paramKey OR 
-                    LOWER(email) LIKE $paramKey OR 
-                    phone LIKE $paramKey 
+                    LOWER(fullName) LIKE $fullNameKey OR
+                    LOWER(email) LIKE $emailKey OR
+                    phone LIKE $phoneKey
                 )";
-                $searchIndex++;
+
+                $i++;
             }
-            
+
             if (!empty($searchConditions)) {
-                 $conditions[] = "(" . implode(" AND ", $searchConditions) . ")";
+                $conditions[] = "(" . implode(" OR ", $searchConditions) . ")";
             }
         }
-        
+
+        // merge conditions
         if (!empty($conditions)) {
             $sql .= " AND " . implode(" AND ", $conditions);
         }
 
-        // 1. TÍNH TỔNG SỐ BẢN GHI
-        $countSql = "SELECT COUNT(*) FROM User WHERE role = 'user'" . (empty($conditions) ? "" : " AND " . implode(" AND ", $conditions));
-        
-        $countStmt = $this->db->prepare($countSql);
-       
-        $countStmt->execute($executeParams); 
-        $totalCount = $countStmt->fetchColumn(); 
+        // COUNT
+        $countSql = "SELECT COUNT(*) FROM `User` WHERE role = 'user'";
+        if (!empty($conditions)) {
+            $countSql .= " AND " . implode(" AND ", $conditions);
+        }
 
-        // 2. LẤY DỮ LIỆU CHÍNH
+        $countStmt = $this->db->prepare($countSql);
+        $countStmt->execute($executeParams);
+        $totalCount = $countStmt->fetchColumn();
+
+        // MAIN query
         $sql .= " ORDER BY $sortKey $sortDirection LIMIT :limit OFFSET :offset";
-        
-        
+
+        // Add limit + offset AFTER count
         $executeParams[':limit'] = (int)$params['limit'];
         $executeParams[':offset'] = (int)$offset;
 
         $stmt = $this->db->prepare($sql);
-        
-        
-        $stmt->execute($executeParams); 
+        $stmt->execute($executeParams);
+
         $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return [
@@ -181,6 +190,7 @@ class UserModel extends Database
             'currentPage' => $params['page']
         ];
     }
+
     
 
     // Cập nhật trạng thái người dùng

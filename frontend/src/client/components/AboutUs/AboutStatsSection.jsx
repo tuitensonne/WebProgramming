@@ -19,14 +19,45 @@ export const AboutStatsSection = ({ data }) => {
 
     const { title, subtitle, items = [] } = data;
 
-    // Nếu items rỗng, sử dụng dữ liệu mặc định (hoặc từ mô tả section)
     const stats =
         items.length > 0
-            ? items
+            ? items.map((item) => {
+                  const rawValue = item.desc;
+                  const value = parseInt(rawValue) || 0;
+
+                  let unit = item.icon || item.subtitle || "%";
+                  if (!isNaN(unit)) unit = "%";
+
+                  if (unit === "+") unit = "+";
+                  else if (unit === "%") unit = "%";
+                  else unit = "";
+
+                  return {
+                      title: item.title,
+                      value: value,
+                      color: item.color || "#ff7043",
+                      unit: unit,
+                  };
+              })
             : [
-                  { title: "Khách hàng hài lòng", value: 92, color: "#4caf50" },
-                  { title: "Tour đã tổ chức", value: 75, color: "#9c27b0" },
-                  { title: "Chi nhánh toàn quốc", value: 55, color: "#e91e63" },
+                  {
+                      title: "Khách hàng hài lòng",
+                      value: 92,
+                      color: "#4caf50",
+                      unit: "%",
+                  },
+                  {
+                      title: "Tour đã tổ chức",
+                      value: 75,
+                      color: "#9c27b0",
+                      unit: "+",
+                  },
+                  {
+                      title: "Chi nhánh toàn quốc",
+                      value: 55,
+                      color: "#e91e63",
+                      unit: "",
+                  },
               ];
 
     return (
@@ -68,7 +99,6 @@ export const AboutStatsSection = ({ data }) => {
                                 mb: 2,
                             }}
                         >
-                            {/* Vòng tròn nền */}
                             <CircularProgress
                                 variant="determinate"
                                 value={100}
@@ -81,7 +111,6 @@ export const AboutStatsSection = ({ data }) => {
                                     left: 0,
                                 }}
                             />
-                            {/* Vòng tròn giá trị */}
                             <CircularProgress
                                 variant="determinate"
                                 value={stat.value > 100 ? 100 : stat.value}
@@ -110,7 +139,7 @@ export const AboutStatsSection = ({ data }) => {
                                     fontWeight="bold"
                                     color="#1A1A1A"
                                 >
-                                    {`${stat.value}${stat.unit || "%"}`}
+                                    {`${stat.value}${stat.unit || ""}`}
                                 </Typography>
                             </Box>
                         </Box>

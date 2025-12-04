@@ -1,4 +1,4 @@
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 
 const containerVariants = {
@@ -12,11 +12,12 @@ const textVariants = {
 
 export const AboutHeroSection = ({ data }) => {
     if (!data) return null;
-
-    const { title, subtitle, description, image_url } = data; // Lấy từ Section table
-    // Giả định Items[0] chứa đoạn văn dài (Item.desc)
+    const { title, subtitle, description, image_url } = data;
     const missionText = data.items?.[0]?.desc || description;
-    const mainImage = data.items?.[0]?.imageUrl || image_url; // Lấy ảnh chính từ Item hoặc Section
+    const mainImage =
+        image_url ||
+        data.items?.[0]?.imageUrl ||
+        "https://placehold.co/500x400/94a3b8/ffffff?text=About+Image";
 
     return (
         <Box
@@ -35,16 +36,16 @@ export const AboutHeroSection = ({ data }) => {
             viewport={{ once: true, amount: 0.3 }}
             variants={containerVariants}
         >
-            {/* Khối Text và Button */}
             <Box sx={{ flex: 1, pr: { md: 5 } }}>
                 <Typography
-                    variant="subtitle1"
+                    variant="h6"
                     color="#ff7043"
                     fontWeight={700}
+                    sx={{ letterSpacing: "2px", textTransform: "uppercase" }}
                     component={motion.p}
                     variants={textVariants}
                 >
-                    {subtitle || "VỀ CHÚNG TÔI"}
+                    {subtitle || "SỨ MỆNH CỦA CHÚNG TÔI"}
                 </Typography>
 
                 <Typography
@@ -64,30 +65,13 @@ export const AboutHeroSection = ({ data }) => {
                     component={motion.p}
                     variants={textVariants}
                 >
-                    {missionText ||
-                        "BK Tour được thành lập với sứ mệnh kết nối du khách với những điểm đến đẹp nhất thế giới, cung cấp trải nghiệm du lịch chất lượng cao và dịch vụ tận tâm."}
+                    {missionText || "BK Tour."}
                 </Typography>
-
-                <motion.div variants={textVariants}>
-                    <Button
-                        variant="contained"
-                        sx={{
-                            backgroundColor: "#ff7043",
-                            "&:hover": { backgroundColor: "#e55b2d" },
-                        }}
-                    >
-                        Xem Lịch sử
-                    </Button>
-                </motion.div>
             </Box>
 
-            {/* Khối Hình ảnh */}
             <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
                 <motion.img
-                    src={
-                        mainImage ||
-                        "https://placehold.co/500x400/94a3b8/ffffff?text=About+Image"
-                    }
+                    src={mainImage}
                     alt="Sightseeing Tour"
                     style={{
                         width: "100%",
