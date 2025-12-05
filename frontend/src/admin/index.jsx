@@ -8,6 +8,7 @@ import AdminUserManagement from "./pages/AdminUserManagement";
 import FooterAdmin from "./pages/FooterAdmin";
 import ContactPage from "./pages/ContactAdmin";
 import AboutUsAdmin from "./pages/AboutUsAdmin";
+import FaqAdmin from "./pages/FaqAdmin";
 
 const adminRouter = createBrowserRouter([
     {
@@ -20,6 +21,7 @@ const adminRouter = createBrowserRouter([
             { path: "landing-page", element: <LandingPageAdmin /> },
             { path: "contact", element: <ContactPage /> },
             { path: "about-us", element: <AboutUsAdmin /> },
+            { path: "faqs", element: <FaqAdmin /> },
         ],
     },
 ]);

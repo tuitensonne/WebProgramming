@@ -9,6 +9,7 @@ import ContactPage from "./pages/ContactPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import AboutUsPage from "./pages/AboutUsPage";
+import { FaqPage } from "./pages/FaqPage";
 
 import PrivateRoute from "../guards/PrivateRoute";
 import PublicRoute from "../guards/PublicRoute";
@@ -47,6 +48,14 @@ function App() {
                         element={
                             <MainLayout>
                                 <AboutUsPage />
+                            </MainLayout>
+                        }
+                    />
+                    <Route
+                        path="/faqs"
+                        element={
+                            <MainLayout>
+                                <FaqPage />
                             </MainLayout>
                         }
                     />
