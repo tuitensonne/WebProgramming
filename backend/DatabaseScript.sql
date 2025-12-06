@@ -285,6 +285,36 @@ VALUES (
     'https://www.instagram.com'
 );
 
+INSERT INTO Place (city, province, country, companyInfoId)
+VALUES
+('Đà Lạt', 'Lâm Đồng', 'Việt Nam', 1),
+('Hội An', 'Quảng Nam', 'Việt Nam', 1),
+('Sa Pa', 'Lào Cai', 'Việt Nam', 1),
+('Bangkok', 'Bangkok', 'Thailand', 1),
+('Singapore', 'Singapore', 'Singapore', 1),
+('Seoul', 'Seoul', 'South Korea', 1);
+
+INSERT INTO Post (userId, title, content, type)
+VALUES
+(1, 'Khám phá Đà Lạt', 'Bài viết giới thiệu tour Đà Lạt 3N2Đ', 'tour'),
+(1, 'Hội An – Đà Nẵng 4N3Đ', 'Bài viết về tour phố cổ và biển', 'tour'),
+(1, 'Bangkok – Pattaya 5N4Đ', 'Giới thiệu tour Thái Lan', 'tour'),
+(1, 'Singapore 4N3Đ', 'Review quốc đảo sư tử', 'tour');
+
+
+INSERT INTO TourCategory (tourCategoryName, description)
+VALUES
+('Tour nội địa', 'Các chuyến đi trong nước'),
+('Tour quốc tế', 'Các chuyến đi nước ngoài'),
+('Tour nghỉ dưỡng', 'Resort, biển, thư giãn'),
+('Tour khám phá', 'Leo núi, trekking, adventure');
+
+INSERT INTO Media (url, type, postId)
+VALUES
+('media/dalat1.jpg', 'image', 5),
+('media/hoian1.jpg', 'image', 6),
+('media/thai1.jpg', 'image', 7),
+('media/singapore1.jpg', 'image', 8);
 
 
 
@@ -301,3 +331,47 @@ VALUES
 
 -- User 3 đặt Tour Thái Lan
 (2, 3, 8900000 * (2 + 0*0.7), 0, 2, 'CANCELLED');
+
+INSERT INTO TourCategory (tourCategoryName, description)
+VALUES
+('Tour nội địa', 'Các chuyến đi trong nước'),
+('Tour quốc tế', 'Các chuyến đi nước ngoài'),
+('Nghỉ dưỡng', 'Biển, resort, thư giãn'),
+('Khám phá', 'Trekking, adventure');
+
+INSERT INTO Tour (name, shortDescription, postId, thumbnailUrl, tourType, categoryId, durationDays, durationNights, availableSeat)
+VALUES
+('Đà Lạt 3N2Đ - Thành phố sương mù',
+ 'Khám phá thành phố hoa và khí hậu mát mẻ quanh năm.',
+ 5, 'thumb_dalat.jpg', 'Group', 1, 3, 2, 25),
+
+('Hội An – Đà Nẵng 4N3Đ',
+ 'Tham quan phố cổ, biển Mỹ Khê và chùa Linh Ứng.',
+ 6, 'thumb_hoian.jpg', 'Group', 1, 4, 3, 20),
+
+('Bangkok – Pattaya 5N4Đ',
+ 'Khám phá Thái Lan: chợ nổi, biển Pattaya, show nghệ thuật.',
+ 7, 'thumb_thailand.jpg', 'Group', 2, 5, 4, 30),
+
+('Singapore 4N3Đ',
+ 'Quốc đảo hiện đại, sạch đẹp, phù hợp gia đình và trẻ em.',
+ 8, 'thumb_singapore.jpg', 'Group', 2, 4, 3, 18);
+
+INSERT INTO TourItinerary (departureDate, price, tourId)
+VALUES
+('2025-01-15', 3500000, 9),
+('2025-02-10', 4500000, 10),
+('2025-03-05', 8900000, 11),
+('2025-04-01', 12900000, 12);
+
+INSERT INTO TourDestination (placeId, tourId, `order`)
+VALUES
+(1, 9, 1), -- Đà Lạt → Tour 1
+
+(2, 10, 2), -- Hội An
+(3, 11, 3), -- Đà Nẵng
+
+(4, 9, 4), -- Bangkok
+(5, 10, 5), -- Pattaya
+
+(6, 11, 6); -- Singapore
