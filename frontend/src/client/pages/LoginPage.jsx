@@ -12,10 +12,15 @@ import {
   InputAdornment,
   Container,
   keyframes,
+  Snackbar,
+  Alert,
 } from "@mui/material";
+
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import logo from "../../assets/images/logo.png";
 import login from "../../assets/images/login.png";
+import api from "../../api/api";
+
 const slideFromLeft = keyframes`
   from {  
     transform: translateX(-100%);
@@ -45,14 +50,58 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
-  const handleLogin = (e) => {
+  const showSnackbar = (msg, severity = "success") => {
+    setSnackbar({ open: true, message: msg, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      alert("Login successful!");
+
+    try {
+      const response = await api.post("/auth/login", {
+        email: email,
+        password: password,
+      });
+
+      if (response.data.success) {
+        localStorage.setItem("token", response.data.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.data.user));
+
+        if (rememberMe) {
+          localStorage.setItem("rememberedEmail", email);
+        } else {
+          localStorage.removeItem("rememberedEmail");
+        }
+
+        showSnackbar("Đăng nhập thành công!", "success");
+
+        setTimeout(() => {
+          navigate("/");
+        }, 800);
+
+        return;
+      }
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message || "Đăng nhập thất bại. Vui lòng thử lại.";
+
+      showSnackbar(errorMessage, "error");
+
+      console.error("Login error:", err);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -174,40 +223,6 @@ export default function LoginPage() {
               }}
             />
 
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 3,
-                animation: `${fadeInUp} 0.5s ease-out 0.7s both`,
-              }}
-            >
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    size="small"
-                    sx={{ "&.Mui-checked": { color: "#ed782aff" } }}
-                  />
-                }
-                label={<Typography variant="body2">Remember me</Typography>}
-              />
-              <Link
-                href="#"
-                sx={{
-                  color: "#ed782aff",
-                  textDecoration: "none",
-                  fontSize: 14,
-                  transition: "all 0.3s ease",
-                  "&:hover": { textDecoration: "underline" },
-                }}
-              >
-                Forgot Password
-              </Link>
-            </Box>
-
             <Button
               fullWidth
               variant="contained"
@@ -231,7 +246,7 @@ export default function LoginPage() {
                 },
               }}
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </Button>
 
             <Typography
@@ -285,6 +300,21 @@ export default function LoginPage() {
           }}
         />
       </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          variant="filled"
+          severity={snackbar.severity}
+          onClose={handleCloseSnackbar}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

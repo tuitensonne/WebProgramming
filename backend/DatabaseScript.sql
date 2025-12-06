@@ -56,6 +56,9 @@ CREATE TABLE Tour (
     thumbnailUrl VARCHAR(255),
     tourType VARCHAR(100),
     categoryId INT,
+    durationDays INT,
+    durationNights INT,
+    availableSeat INT,
     FOREIGN KEY (postId) REFERENCES Post(id),
     FOREIGN KEY (categoryId) REFERENCES TourCategory(id)
 );
@@ -63,11 +66,8 @@ CREATE TABLE Tour (
 -- Bảng TourItinerary
 CREATE TABLE TourItinerary (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    availableSeat INT,
     departureDate DATE,
     price DECIMAL(10,2),
-    durationDays INT,
-    durationNights INT,
     tourId INT,
     FOREIGN KEY (tourId) REFERENCES Tour(id)
 );
@@ -136,7 +136,7 @@ CREATE TABLE Section (
     image_url VARCHAR(255),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (page_id) REFERENCES Page(id) ON DELETE CASCADE
+    FOREIGN KEY (page_id) REFERENCES Page(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES TourCategory(id) ON DELETE SET NULL
 );
 
@@ -270,3 +270,34 @@ VALUES
 
 ('Đặng Minh O', 'Thông tin xe đưa đón', 'minho@example.com', '0901223344', 'Xe đưa đón sẽ liên hệ trước bao lâu?', NOW(), NULL, NULL, NULL, 'read', 'unreplied');
 
+INSERT INTO CompanyInfo (
+    company_name, slogan, logo_url, address,
+    email, hotline, facebook_link, instagram_link
+)
+VALUES (
+    'TravelIn',
+    'Đi đây đi đó',
+    'lkdsjfldskjdslkfjdsfl',
+    'LTK, jskdjfkldjslkfj',
+    'travelin@gmail.com',
+    '07895390834',
+    'https://www.facebook.com',
+    'https://www.instagram.com'
+);
+
+
+
+
+INSERT INTO Booking (userId, tourId, totalCost, numberOfChild, numberOfAdult, status)
+VALUES
+-- User 1 đặt Tour Đà Lạt
+(1, 1, 3500000 * (2 + 1*0.7), 1, 2, 'PAID'),
+
+-- User 1 đặt Tour Singapore
+(1, 4, 12900000 * (2 + 0*0.7), 0, 2, 'PENDING'),
+
+-- User 2 đặt Tour Hội An – Đà Nẵng
+(2, 2, 4500000 * (1 + 1*0.7), 1, 1, 'PAID'),
+
+-- User 3 đặt Tour Thái Lan
+(2, 3, 8900000 * (2 + 0*0.7), 0, 2, 'CANCELLED');
