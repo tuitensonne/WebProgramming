@@ -20,6 +20,8 @@ use App\Controllers\BannerController;
 use App\Controllers\SectionController;
 use App\Controllers\FooterController;
 use App\Controllers\TourController;
+use App\Controllers\PostController;
+use App\Controllers\PostCommentController;
 $router = new Router();
 
 // ======= ROUTES =======
@@ -57,5 +59,19 @@ $router->post('/comments', [CommentController::class, 'create']);
  * Tour routes
  */
 $router->get('/tours/top', [TourController::class, 'getTopToursByCategory']);
+$router->get('/tours', [TourController::class, 'getAllTours']);
+
+/**
+ * Post (Travel Guide) routes
+ */
+$router->get('/posts', [PostController::class, 'getAllPosts']);
+$router->get('/posts/{id}', [PostController::class, 'getPostById']);
+$router->get('/posts/locations', [PostController::class, 'getLocations']);
+
+/**
+ * Post Comment routes
+ */
+$router->get('/posts/{postId}/comments', [PostCommentController::class, 'getCommentsByPost']);
+$router->post('/posts/{postId}/comments', [PostCommentController::class, 'createComment']);
 
 $router->dispatch();

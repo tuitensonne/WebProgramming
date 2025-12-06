@@ -84,7 +84,7 @@ const Header = () => {
     { label: "Du lịch quốc tế" },
     { label: "Kiểu tour du lịch" },
     { label: "Lịch khởi hành" },
-    { label: "Cẩm nang du lịch" }
+    { label: "Cẩm nang du lịch", href: "/travel-guides" },
   ];
 
   return (
