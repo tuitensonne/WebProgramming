@@ -4,8 +4,6 @@ import {
   Box,
   TextField,
   Button,
-  Checkbox,
-  FormControlLabel,
   Typography,
   Link,
   IconButton,
@@ -20,6 +18,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import logo from "../../assets/images/logo.png";
 import login from "../../assets/images/login.png";
 import api from "../../api/api";
+import { authUtils } from "../../utils/auth";
 
 const slideFromLeft = keyframes`
   from {  
@@ -73,17 +72,19 @@ export default function LoginPage() {
         email: email,
         password: password,
       });
-
+      console.log("Login response:", response.data.data);
       if (response.data.success) {
-        localStorage.setItem("token", response.data.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.data.user));
+        authUtils.setAuth(
+          response.data.data.token,
+          response.data.data.user.role,
+          response.data.data.user
+        );
 
-        if (rememberMe) {
-          localStorage.setItem("rememberedEmail", email);
+        if (response.data.data.user.role === "admin") {
+          authUtils.navigateToApp("/admin");
         } else {
-          localStorage.removeItem("rememberedEmail");
+          authUtils.navigateToApp("/");
         }
-
         showSnackbar("Đăng nhập thành công!", "success");
 
         setTimeout(() => {

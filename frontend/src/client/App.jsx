@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { Box } from "@mui/material";
 
 import Header from "./components/Header";
@@ -15,68 +20,86 @@ import PrivateRoute from "../guards/PrivateRoute";
 import PublicRoute from "../guards/PublicRoute";
 
 const MainLayout = ({ children }) => (
-    <>
-        <Header />
-        <Box component="main">{children}</Box>
-        <Footer />
-    </>
+  <>
+    <Header />
+    <Box component="main">{children}</Box>
+    <Footer />
+  </>
 );
 
 function App() {
-    return (
-        <Router>
-            <Box>
-                <Routes>
-                    <Route
-                        path="/"
-                        element={
-                            <MainLayout>
-                                <LandingPage />
-                            </MainLayout>
-                        }
-                    />
-                    <Route
-                        path="/contact"
-                        element={
-                            <MainLayout>
-                                <ContactPage />
-                            </MainLayout>
-                        }
-                    />
-                    <Route
-                        path="/about-us"
-                        element={
-                            <MainLayout>
-                                <AboutUsPage />
-                            </MainLayout>
-                        }
-                    />
-                    <Route
-                        path="/faqs"
-                        element={
-                            <MainLayout>
-                                <FaqPage />
-                            </MainLayout>
-                        }
-                    />
+  return (
+    <Router>
+      <Box>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <MainLayout>
+                <LandingPage />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/contact"
+            element={
+              <MainLayout>
+                <ContactPage />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/about-us"
+            element={
+              <MainLayout>
+                <AboutUsPage />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/faqs"
+            element={
+              <MainLayout>
+                <FaqPage />
+              </MainLayout>
+            }
+          />
 
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<SignupPage />} />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute restricted={true}>
+                <LoginPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute restricted={true}>
+                <SignupPage />
+              </PublicRoute>
+            }
+          />
 
-                    {/* <Route
+          {/* Private routes - chỉ user role
+          <Route
             path="/dashboard"
             element={
-              <PrivateRoute>
+              <PrivateRoute allowedRoles={["user"]}>
                 <MainLayout>
                   <Dashboard />
                 </MainLayout>
               </PrivateRoute>
             }
           /> */}
-                </Routes>
-            </Box>
-        </Router>
-    );
+
+          {/* Catch all - redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Box>
+    </Router>
+  );
 }
 
 export default App;

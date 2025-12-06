@@ -15,7 +15,6 @@ import {
 import { styled } from "@mui/material/styles";
 import api from "../../api/api";
 
-
 const SearchContainer = styled(Box)(({ theme }) => ({
   position: "relative",
   borderRadius: "50px",
@@ -103,7 +102,6 @@ const HeroTitle = styled(Typography)(({ theme }) => ({
   },
 }));
 
-
 const Thumbnail = () => {
   const [fade, setFade] = useState({ opacity: 1, translateY: 0 });
   const [images, setImages] = useState([]);
@@ -185,11 +183,11 @@ const Thumbnail = () => {
               left: "50%",
               transform: "translate(-50%, -50%)",
               width: "100%",
-              height: "auto",         
-              maxHeight: "100vh",       
+              height: "auto",
+              maxHeight: "100vh",
               objectFit: {
                 xs: "contain",
-                sm: "cover",  
+                sm: "cover",
               },
               objectPosition: "center",
               transition: "opacity 1s ease-in-out",
@@ -246,13 +244,15 @@ const Thumbnail = () => {
 
         <HeroContent>
           <HeroTitle>
-            Choose a Country For Your
+            Hãy chọn địa điểm tiếp theo
             <br />
-            Next Adventure?
+            cho chuyến đi của bạn
           </HeroTitle>
 
           <SearchContainer sx={{ margin: "0 auto" }}>
-            <LocationOnIcon sx={{ color: "#666", mr: 1, fontSize: { xs: 18, sm: 22 } }} />
+            <LocationOnIcon
+              sx={{ color: "#666", mr: 1, fontSize: { xs: 18, sm: 22 } }}
+            />
             <StyledInputBase placeholder="Tìm kiếm địa điểm du lịch" />
             <SearchButton>
               <SearchIcon sx={{ fontSize: { xs: 18, sm: 22 } }} />
