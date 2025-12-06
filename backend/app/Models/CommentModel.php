@@ -8,6 +8,9 @@ use PDOException;
 class CommentModel
 {
     private PDO $db;
+    private string $table = 'Comment';
+    private string $userTable = 'User';
+
 
     public function __construct()
     {
@@ -52,6 +55,43 @@ class CommentModel
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log('CommentModel::getCommentWithHighestRating error: ' . $e->getMessage());
+            return null;
+        }
+    }
+    public function getAllCommentsWithUsers(): ?array
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT 
+                    c.id, c.content, c.rating, c.createdAt,
+                    u.fullName, u.avatarUrl, u.id as userId
+                FROM {$this->table} c
+                INNER JOIN {$this->userTable} u ON c.userId = u.id
+                ORDER BY c.rating DESC, c.createdAt DESC
+            ");
+
+            $stmt->execute();
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Chuyển đổi định dạng kết quả sang cấu trúc frontend mong muốn (join User data)
+            $formattedResults = [];
+            foreach ($results as $row) {
+                $formattedResults[] = [
+                    'id' => $row['id'],
+                    'content' => $row['content'],
+                    'rating' => (int)$row['rating'],
+                    'createdAt' => $row['createdAt'],
+                    'user' => [
+                        'id' => $row['userId'],
+                        'fullName' => $row['fullName'],
+                        'avatarUrl' => $row['avatarUrl'],
+                    ]
+                ];
+            }
+
+            return $formattedResults;
+        } catch (PDOException $e) {
+            error_log('CommentModel::getAllCommentsWithUsers error: ' . $e->getMessage());
             return null;
         }
     }

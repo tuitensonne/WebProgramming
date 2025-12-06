@@ -7,26 +7,30 @@ import LandingPageAdmin from "./pages/LandingPageAdmin";
 import AdminUserManagement from "./pages/AdminUserManagement";
 import FooterAdmin from "./pages/FooterAdmin";
 import ContactPage from "./pages/ContactAdmin";
+import AboutUsAdmin from "./pages/AboutUsAdmin";
+import FaqAdmin from "./pages/FaqAdmin";
 
 const adminRouter = createBrowserRouter([
-  {
-    path: "/admin",
-    element: <AdminLayout />,
-    children: [
-      { index: true, element: <LandingPageAdmin /> },
-      { path: "users", element: <AdminUserManagement /> },
-      { path: "footer", element: <FooterAdmin /> },
-      { path: "landing-page", element: <LandingPageAdmin /> },
-      { path: "contact", element: <ContactPage /> },
-    ],
-  },
+    {
+        path: "/admin",
+        element: <AdminLayout />,
+        children: [
+            { index: true, element: <LandingPageAdmin /> },
+            { path: "users", element: <AdminUserManagement /> },
+            { path: "footer", element: <FooterAdmin /> },
+            { path: "landing-page", element: <LandingPageAdmin /> },
+            { path: "contact", element: <ContactPage /> },
+            { path: "about-us", element: <AboutUsAdmin /> },
+            { path: "faqs", element: <FaqAdmin /> },
+        ],
+    },
 ]);
 
 export default function AdminApp() {
-  useEffect(() => {
-    import("@tabler/core/dist/css/tabler.min.css");
-    import("@tabler/core/dist/js/tabler.min.js");
-  }, []);
+    useEffect(() => {
+        import("@tabler/core/dist/css/tabler.min.css");
+        import("@tabler/core/dist/js/tabler.min.js");
+    }, []);
 
-  return <RouterProvider router={adminRouter} />;
+    return <RouterProvider router={adminRouter} />;
 }
