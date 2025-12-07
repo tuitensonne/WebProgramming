@@ -222,6 +222,13 @@ VALUES
 (3, NULL, 'Enjoy 5-Star Comfort', NULL, '/assets/hotel1.jpg', 'Explore Now', NULL),
 (3, NULL, 'Discover The Wild', NULL, '/assets/hotel2.jpg', 'Book Trip', NULL);
 
+INSERT INTO Item (section_id, icon, title, `desc`, imageUrl, buttonText, color)
+VALUES
+(3, '📍', 'Chọn điểm đến', 'Tìm tour theo khu vực, chủ đề hoặc nhu cầu trải nghiệm.', NULL, NULL, '#FFB800'),
+(3, '📅', 'Chọn ngày khởi hành', 'Xem lịch khởi hành và giá tour theo thời gian thực.', NULL, NULL, '#FF6B4A'),
+(3, '🚗', 'Đặt tour & lên đường', 'Thanh toán nhanh chóng, xác nhận tức thì và sẵn sàng khám phá.', NULL, NULL, '#1B7B8F');
+
+
 INSERT INTO Section (
   page_id, type, `order`,
   title, subtitle, description,
@@ -375,3 +382,13 @@ VALUES
 (5, 10, 5), -- Pattaya
 
 (6, 11, 6); -- Singapore
+
+INSERT INTO Item (section_id, icon, title, subtitle, imageUrl, `desc`, color)
+VALUES
+(2, 'TravelExplore', 'Nhiều lựa chọn tour', 'Tour đa dạng trong & ngoài nước', NULL, 'Hệ thống cung cấp hàng trăm tour chất lượng, cập nhật liên tục.', '#1976d2'),
+
+(2, 'Verified', 'Uy tín & minh bạch', 'Giá rõ ràng – không phí ẩn', NULL, 'Mọi thông tin tour được kiểm duyệt, minh bạch và đáng tin cậy.', '#2e7d32'),
+
+(2, 'SupportAgent', 'Hỗ trợ nhanh 24/7', 'Đồng hành suốt chuyến đi', NULL, 'Đội ngũ hỗ trợ luôn sẵn sàng giải đáp mọi thắc mắc.', '#ed6c02'),
+
+(2, 'ThumbUp', 'Trải nghiệm tối ưu', 'Được khách hàng tin chọn', NULL, 'Cam kết mang lại trải nghiệm du lịch tốt nhất với dịch vụ chuyên nghiệp.', '#9c27b0');
