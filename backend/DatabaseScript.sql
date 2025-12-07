@@ -10,7 +10,7 @@ CREATE TABLE User (
     password VARCHAR(255),
     isActive BOOLEAN DEFAULT TRUE,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP.
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     paymentInfo longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`paymentInfo`))
 );
 
@@ -49,6 +49,14 @@ CREATE TABLE TourCategory (
     description TEXT
 );
 
+CREATE TABLE TourCategoryRel (
+    tourId INT,
+    categoryId INT,
+    PRIMARY KEY (tourId, categoryId),
+    FOREIGN KEY (tourId) REFERENCES Tour(id),
+    FOREIGN KEY (categoryId) REFERENCES TourCategory(id)
+);
+
 -- Bảng Tour
 CREATE TABLE Tour (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -57,12 +65,10 @@ CREATE TABLE Tour (
     postId INT,
     thumbnailUrl VARCHAR(255),
     tourType VARCHAR(100),
-    categoryId INT,
     durationDays INT,
     durationNights INT,
     availableSeat INT,
-    FOREIGN KEY (postId) REFERENCES Post(id),
-    FOREIGN KEY (categoryId) REFERENCES TourCategory(id)
+    FOREIGN KEY (postId) REFERENCES Post(id)
 );
 
 -- Bảng TourItinerary
@@ -73,6 +79,7 @@ CREATE TABLE TourItinerary (
     tourId INT,
     FOREIGN KEY (tourId) REFERENCES Tour(id)
 );
+
 
 -- Bảng CompanyInfo (moved before Place)
 CREATE TABLE CompanyInfo (
@@ -119,6 +126,18 @@ CREATE TABLE Booking (
     FOREIGN KEY (tourId) REFERENCES Tour(id)
 );
 
+-- Bảng SavedTour (User's Saved/Bookmarked Tours)
+CREATE TABLE SavedTour (
+    userId INT NOT NULL,
+    tourId INT NOT NULL,
+    savedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (userId, tourId),
+    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (tourId) REFERENCES Tour(id) ON DELETE CASCADE,
+    INDEX idx_user (userId),
+    INDEX idx_tour (tourId)
+);
+
 -- Bảng Comment
 CREATE TABLE Comment (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -128,7 +147,7 @@ CREATE TABLE Comment (
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     rating TINYINT CHECK (rating BETWEEN 1 AND 5),
     FOREIGN KEY (userId) REFERENCES User(id),
-    FOREIGN KEY (tourId) REFERENCES TourItinerary(id)
+    FOREIGN KEY (tourId) REFERENCES Tour(id)
 );
 
 
@@ -312,20 +331,12 @@ VALUES
 (1, 'Singapore 4N3Đ', 'Review quốc đảo sư tử', 'tour');
 
 
-INSERT INTO TourCategory (tourCategoryName, description)
-VALUES
-('Tour nội địa', 'Các chuyến đi trong nước'),
-('Tour quốc tế', 'Các chuyến đi nước ngoài'),
-('Tour nghỉ dưỡng', 'Resort, biển, thư giãn'),
-('Tour khám phá', 'Leo núi, trekking, adventure');
-
 INSERT INTO Media (url, type, postId)
 VALUES
 ('media/dalat1.jpg', 'image', 5),
 ('media/hoian1.jpg', 'image', 6),
 ('media/thai1.jpg', 'image', 7),
 ('media/singapore1.jpg', 'image', 8);
-
 
 
 INSERT INTO Booking (userId, tourId, totalCost, numberOfChild, numberOfAdult, status)
@@ -342,30 +353,48 @@ VALUES
 -- User 3 đặt Tour Thái Lan
 (2, 3, 8900000 * (2 + 0*0.7), 0, 2, 'CANCELLED');
 
-INSERT INTO TourCategory (tourCategoryName, description)
+INSERT INTO TourCategory (id, tourCategoryName, description)
 VALUES
-('Tour nội địa', 'Các chuyến đi trong nước'),
-('Tour quốc tế', 'Các chuyến đi nước ngoài'),
-('Nghỉ dưỡng', 'Biển, resort, thư giãn'),
-('Khám phá', 'Trekking, adventure');
+(1, 'Tour nội địa', 'Các chuyến đi trong nước'),
+(2, 'Tour quốc tế', 'Các chuyến đi nước ngoài'),
+(3, 'Tour Biển Đảo', 'Các tour nghỉ dưỡng, khám phá các bãi biển và hải đảo nổi tiếng.'),
+(4, 'Tour Núi Rừng & Trekking', 'Các tour khám phá miền núi, cao nguyên, trekking và trải nghiệm văn hóa bản địa.'),
+(5, 'Tour Di Sản & Văn Hóa', 'Các tour tham quan các di sản văn hóa thế giới, di tích lịch sử và trung tâm tâm linh.'),
+(6, 'Tour Thành Phố & Giải Trí', 'Các tour khám phá đô thị sầm uất, mua sắm và khu vui chơi giải trí hiện đại.');
 
-INSERT INTO Tour (name, shortDescription, postId, thumbnailUrl, tourType, categoryId, durationDays, durationNights, availableSeat)
+INSERT INTO Tour (name, shortDescription, postId, thumbnailUrl, tourType, durationDays, durationNights, availableSeat)
 VALUES
 ('Đà Lạt 3N2Đ - Thành phố sương mù',
  'Khám phá thành phố hoa và khí hậu mát mẻ quanh năm.',
- 5, 'thumb_dalat.jpg', 'Group', 1, 3, 2, 25),
+ 5, 'thumb_dalat.jpg', 'Group', 3, 2, 25),
 
 ('Hội An – Đà Nẵng 4N3Đ',
  'Tham quan phố cổ, biển Mỹ Khê và chùa Linh Ứng.',
- 6, 'thumb_hoian.jpg', 'Group', 1, 4, 3, 20),
+ 6, 'thumb_hoian.jpg', 'Group', 4, 3, 20),
 
 ('Bangkok – Pattaya 5N4Đ',
  'Khám phá Thái Lan: chợ nổi, biển Pattaya, show nghệ thuật.',
- 7, 'thumb_thailand.jpg', 'Group', 2, 5, 4, 30),
+ 7, 'thumb_thailand.jpg', 'Group', 5, 4, 30),
 
 ('Singapore 4N3Đ',
  'Quốc đảo hiện đại, sạch đẹp, phù hợp gia đình và trẻ em.',
- 8, 'thumb_singapore.jpg', 'Group', 2, 4, 3, 18);
+ 8, 'thumb_singapore.jpg', 'Group', 4, 3, 18);
+
+-- Liên kết Tour 1 (Đà Lạt 3N2Đ)
+INSERT INTO TourCategoryRel (tourId, categoryId) VALUES (1, 1); -- Nội Địa
+INSERT INTO TourCategoryRel (tourId, categoryId) VALUES (1, 4); -- Núi Rừng & Trekking
+
+-- Liên kết Tour 2 (Hội An – Đà Nẵng 4N3Đ)
+INSERT INTO TourCategoryRel (tourId, categoryId) VALUES (2, 1); -- Nội Địa
+INSERT INTO TourCategoryRel (tourId, categoryId) VALUES (2, 5); -- Di Sản & Văn Hóa
+
+-- Liên kết Tour 3 (Bangkok – Pattaya 5N4Đ)
+INSERT INTO TourCategoryRel (tourId, categoryId) VALUES (3, 2); -- Quốc Tế
+INSERT INTO TourCategoryRel (tourId, categoryId) VALUES (3, 3); -- Tour Biển Đảo
+
+-- Liên kết Tour 4 (Singapore 4N3Đ)
+INSERT INTO TourCategoryRel (tourId, categoryId) VALUES (4, 2); -- Quốc Tế
+INSERT INTO TourCategoryRel (tourId, categoryId) VALUES (4, 6); -- Thành Phố & Giải Trí
 
 INSERT INTO TourItinerary (departureDate, price, tourId)
 VALUES

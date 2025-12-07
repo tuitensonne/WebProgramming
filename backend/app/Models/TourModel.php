@@ -97,14 +97,12 @@ class TourModel
     {
         try {
             $query = "
-                SELECT 
+                SELECT DISTINCT
                     t.id,
                     t.name,
                     t.shortDescription,
                     t.thumbnailUrl,
                     t.tourType,
-                    t.categoryId,
-                    c.tourCategoryName AS categoryName,
                     t.durationDays,
                     t.durationNights,
                     t.availableSeat,
@@ -125,7 +123,8 @@ class TourModel
                         ELSE NULL
                     END AS departureDate
                 FROM Tour t
-                INNER JOIN TourCategory c ON t.categoryId = c.id
+                INNER JOIN TourCategoryRel tcr ON t.id = tcr.tourId
+                INNER JOIN TourCategory c ON tcr.categoryId = c.id
                 LEFT JOIN (
                     SELECT 
                         ti1.tourId, 
@@ -138,9 +137,10 @@ class TourModel
                         GROUP BY tourId
                     ) ti2 ON ti1.tourId = ti2.tourId AND ti1.departureDate = ti2.minDate
                 ) ti ON t.id = ti.tourId
-                WHERE t.categoryId IN (7, 8, 9, 10) AND t.tourType = 'international'
-                GROUP BY t.categoryId
-                ORDER BY t.categoryId DESC
+                WHERE tcr.categoryId IN (3, 4, 5, 6)
+                GROUP BY t.id
+                ORDER BY t.id DESC
+                LIMIT 1
             ";
 
             $stmt = $this->db->prepare($query);
@@ -155,7 +155,6 @@ class TourModel
                 $row['oldPrice'] = null;
 
                 $row['location'] = $row['name'] ?? 'Tour du lịch';
-                $row['icon'] = $this->getIconByCategory($row['categoryId']);
                 // Price, oldPrice, guests, duration come from DB now
                 $row['rating'] = $row['rating'] ?? 0;
                 $row['reviews'] = $row['reviews'] ?? 0;
@@ -188,9 +187,7 @@ class TourModel
                     t.shortDescription,
                     t.thumbnailUrl,
                     t.tourType,
-                    t.categoryId,
-                    c.tourCategoryName AS categoryName,
-                    COUNT(b.tourId) AS totalBookings,
+                    COUNT(DISTINCT b.tourId) AS totalBookings,
                     t.durationDays,
                     t.durationNights,
                     t.availableSeat,
@@ -211,7 +208,7 @@ class TourModel
                         ELSE NULL
                     END AS departureDate
                 FROM Tour t
-                INNER JOIN TourCategory c ON t.categoryId = c.id
+                INNER JOIN TourCategoryRel tcr ON t.id = tcr.tourId
                 LEFT JOIN Booking b ON t.id = b.tourId
                 LEFT JOIN (
                     SELECT 
@@ -223,8 +220,8 @@ class TourModel
                         GROUP BY tourId
                     ) ti2 ON ti1.tourId = ti2.tourId AND ti1.departureDate = ti2.minDate
                 ) ti ON t.id = ti.tourId
-                WHERE t.categoryId = :categoryId
-                GROUP BY t.id, t.name, t.shortDescription, t.thumbnailUrl, t.tourType, t.categoryId, c.tourCategoryName, t.durationDays, t.durationNights, t.availableSeat
+                WHERE tcr.categoryId = :categoryId
+                GROUP BY t.id, t.name, t.shortDescription, t.thumbnailUrl, t.tourType, t.durationDays, t.durationNights, t.availableSeat
                 ORDER BY totalBookings DESC
                 LIMIT 4
             ";
@@ -242,7 +239,7 @@ class TourModel
                 $row['oldPrice'] = null;
 
                 $row['location'] = $row['name'] ?? 'Tour du lịch';
-                $row['icon'] = $this->getIconByCategory($row['categoryId']);
+                $row['icon'] = '🎫'; // Default icon
                 // Price, oldPrice, guests, duration come from DB now
                 $row['rating'] = $row['rating'] ?? 0;
                 $row['reviews'] = $row['reviews'] ?? 0;
@@ -290,14 +287,12 @@ class TourModel
         $query = "";
         try {
             $query = "
-                SELECT 
+                SELECT DISTINCT
                     t.id,
                     t.name,
                     t.shortDescription,
                     t.thumbnailUrl,
                     t.tourType,
-                    t.categoryId,
-                    c.tourCategoryName AS categoryName,
                     COUNT(DISTINCT b.userId) AS totalBookings,
                     t.durationDays,
                     t.durationNights,
@@ -319,7 +314,8 @@ class TourModel
                         ELSE NULL
                     END) AS departureDate
                 FROM Tour t
-                INNER JOIN TourCategory c ON t.categoryId = c.id
+                LEFT JOIN TourCategoryRel tcr ON t.id = tcr.tourId
+                LEFT JOIN TourCategory c ON tcr.categoryId = c.id
                 LEFT JOIN Booking b ON t.id = b.tourId
                 LEFT JOIN (
                     SELECT 
@@ -337,7 +333,7 @@ class TourModel
             ";
 
             if ($categoryId) {
-                $query .= " AND t.categoryId = :categoryId ";
+                $query .= " AND tcr.categoryId = :categoryId ";
             }
 
             if ($tourType) {
@@ -376,7 +372,7 @@ class TourModel
                 }
             }
 
-            $query .= " GROUP BY t.id, t.name, t.shortDescription, t.thumbnailUrl, t.tourType, t.categoryId, c.tourCategoryName, t.durationDays, t.durationNights, t.availableSeat";
+            $query .= " GROUP BY t.id, t.name, t.shortDescription, t.thumbnailUrl, t.tourType, t.durationDays, t.durationNights, t.availableSeat";
 
             // Apply sorting - support price asc/desc and rating (fallback to bookings)
             switch ($sortBy) {
@@ -433,7 +429,7 @@ class TourModel
                 $row['oldPrice'] = null;
 
                 $row['location'] = $row['name'] ?? 'Tour du lịch';
-                $row['icon'] = $this->getIconByCategory($row['categoryId']);
+                $row['icon'] = '🎫'; // Default icon (categoryId no longer in query)
                 // Price, oldPrice, guests, duration come from DB now
                 $row['rating'] = $row['rating'] ?? 0;
                 $row['reviews'] = $row['reviews'] ?? 0;

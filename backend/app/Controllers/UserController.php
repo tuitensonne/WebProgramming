@@ -823,7 +823,7 @@ class UserController extends Controller
                 $query = "
                     SELECT 
                         t.id, 
-                        t.shortDescription AS name,
+                        t.name,
                         t.shortDescription,
                         t.thumbnailUrl,
                         MAX(ti.price) AS originalPrice
@@ -841,7 +841,7 @@ class UserController extends Controller
                         ) ti2 ON ti1.tourId = ti2.tourId AND ti1.departureDate = ti2.minDate
                     ) ti ON t.id = ti.tourId
                     WHERE st.userId = :userId
-                    GROUP BY t.id, t.shortDescription, t.thumbnailUrl
+                    GROUP BY t.id, t.name, t.shortDescription, t.thumbnailUrl
                     ORDER BY st.savedAt DESC
                 ";
                 $stmt = $db->prepare($query);
