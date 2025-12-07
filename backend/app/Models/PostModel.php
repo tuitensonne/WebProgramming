@@ -11,20 +11,14 @@ class PostModel
 
     public function __construct()
     {
+        // LẤY INSTANCE ĐÚNG – KHÔNG GỌI __construct()
         $this->db = Database::getInstance()->getConnection();
     }
 
     /**
-     * Get all posts with search, location filter, and sorting
-     *
-     * @param string|null $search Search by title or description
-     * @param string|null $location Filter by location
-     * @param string $sort Sort by: 'latest', 'oldest', 'readTime'
-     * @param int $limit Limit results
-     * @param int $offset Pagination offset
-     * @return array|null
+     * Get all posts with search, region filter, and sorting
      */
-    public function getAllPosts($search = null, $location = null, $sort = 'latest', $limit = 12, $offset = 0): ?array
+    public function getAllPosts($search = null, $region = null, $sort = 'latest', $limit = 12, $offset = 0): ?array
     {
         try {
             $query = "
@@ -34,10 +28,11 @@ class PostModel
                     p.description,
                     p.thumbnailUrl,
                     p.location,
+                    p.region,
                     p.readTime,
                     p.createdAt,
                     p.type,
-                    u.fullName as authorName
+                    COALESCE(u.fullName, 'Unknown') AS authorName
                 FROM Post p
                 LEFT JOIN User u ON p.userId = u.id
                 WHERE 1=1
@@ -45,39 +40,47 @@ class PostModel
 
             $params = [];
 
-            if ($search) {
-                $query .= " AND (p.title LIKE :search OR p.description LIKE :search)";
+            /** SEARCH CHỈ THEO TITLE */
+            if (!empty($search)) {
+                $query .= " AND p.title LIKE :search";
                 $params[':search'] = "%$search%";
             }
 
-            if ($location) {
-                $query .= " AND p.location LIKE :location";
-                $params[':location'] = "%$location%";
+            /** FILTER REGION */
+            if (!empty($region) && $region !== "all") {
+                $query .= " AND p.region = :region";
+                $params[':region'] = $region;
             }
 
-            // Sorting
-            if ($sort === 'oldest') {
-                $query .= " ORDER BY p.createdAt ASC";
-            } elseif ($sort === 'readTime') {
-                $query .= " ORDER BY p.readTime ASC";
-            } else { // 'latest' (default)
-                $query .= " ORDER BY p.createdAt DESC";
+            /** SORTING */
+            switch ($sort) {
+                case 'oldest':
+                    $query .= " ORDER BY p.createdAt ASC";
+                    break;
+                case 'readTime':
+                    $query .= " ORDER BY p.readTime ASC";
+                    break;
+                default:
+                    $query .= " ORDER BY p.createdAt DESC";
             }
 
             $query .= " LIMIT :limit OFFSET :offset";
 
             $stmt = $this->db->prepare($query);
-            
+
+            // Bind các params động (search, region)
             foreach ($params as $key => $value) {
                 $stmt->bindValue($key, $value);
             }
-            
+
+            // Limit + Offset phải bind kiểu INT
             $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
-            
+
             $stmt->execute();
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         } catch (PDOException $e) {
             error_log("Error fetching posts: " . $e->getMessage());
             return null;
@@ -85,37 +88,35 @@ class PostModel
     }
 
     /**
-     * Get total count of posts with filters applied
-     *
-     * @param string|null $search
-     * @param string|null $location
-     * @return int|null
+     * Count posts (search + region)
      */
-    public function countPosts($search = null, $location = null): ?int
+    public function countPosts($search = null, $region = null): ?int
     {
         try {
-            $query = "SELECT COUNT(*) as total FROM Post p WHERE 1=1";
+            $query = "SELECT COUNT(*) AS total FROM Post p WHERE 1=1";
             $params = [];
 
-            if ($search) {
-                $query .= " AND (p.title LIKE :search OR p.description LIKE :search)";
+            if (!empty($search)) {
+                $query .= " AND p.title LIKE :search";
                 $params[':search'] = "%$search%";
             }
 
-            if ($location) {
-                $query .= " AND p.location LIKE :location";
-                $params[':location'] = "%$location%";
+            if (!empty($region) && $region !== "all") {
+                $query .= " AND p.region = :region";
+                $params[':region'] = $region;
             }
 
             $stmt = $this->db->prepare($query);
-            
+
             foreach ($params as $key => $value) {
                 $stmt->bindValue($key, $value);
             }
-            
+
             $stmt->execute();
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
             return (int)($result['total'] ?? 0);
+
         } catch (PDOException $e) {
             error_log("Error counting posts: " . $e->getMessage());
             return null;
@@ -123,10 +124,7 @@ class PostModel
     }
 
     /**
-     * Get a single post by ID
-     *
-     * @param int $id
-     * @return array|null
+     * Get single post by ID
      */
     public function getPostById(int $id): ?array
     {
@@ -139,22 +137,24 @@ class PostModel
                     p.content,
                     p.thumbnailUrl,
                     p.location,
+                    p.region,
                     p.readTime,
                     p.createdAt,
-                    p.updatedAt,
+                    p.createdAt AS updatedAt,
                     p.type,
-                    u.fullName as authorName,
-                    u.avatarUrl as authorAvatar
+                    COALESCE(u.fullName, 'Unknown') AS authorName,
+                    COALESCE(u.avatarUrl, '') AS authorAvatar
                 FROM Post p
                 LEFT JOIN User u ON p.userId = u.id
                 WHERE p.id = :id
             ";
 
             $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->bindValue(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
 
             return $stmt->fetch(PDO::FETCH_ASSOC);
+
         } catch (PDOException $e) {
             error_log("Error fetching post by ID: " . $e->getMessage());
             return null;
@@ -162,26 +162,25 @@ class PostModel
     }
 
     /**
-     * Get unique locations from all posts
-     *
-     * @return array|null
+     * Get unique regions for filter dropdown
      */
-    public function getUniqueLocations(): ?array
+    public function getUniqueRegions(): ?array
     {
         try {
             $query = "
-                SELECT DISTINCT location 
-                FROM Post 
-                WHERE location IS NOT NULL AND location != ''
-                ORDER BY location ASC
+                SELECT DISTINCT p.region 
+                FROM Post p
+                WHERE p.region IS NOT NULL AND p.region != ''
+                ORDER BY p.region ASC
             ";
 
             $stmt = $this->db->prepare($query);
             $stmt->execute();
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         } catch (PDOException $e) {
-            error_log("Error fetching locations: " . $e->getMessage());
+            error_log("Error fetching regions: " . $e->getMessage());
             return null;
         }
     }

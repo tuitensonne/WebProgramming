@@ -84,6 +84,23 @@ function App() {
               </PublicRoute>
             }
           />
+          <Route
+            path="/travel-guides"
+            element={
+              <MainLayout>
+                <TravelGuidePage />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/travel-guides/:id"
+            element={
+              <MainLayout>
+                <PostDetailPage />
+              </MainLayout>
+            }
+          />
 
           {/* Private routes - chỉ user role
           <Route
@@ -99,8 +116,6 @@ function App() {
 
           {/* Catch all - redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
-          <Route path="/travel-guides" element={<TravelGuidePage />} />
-          <Route path="/travel-guides/:id" element={<PostDetailPage />} />
         </Routes>
       </Box>
     </Router>

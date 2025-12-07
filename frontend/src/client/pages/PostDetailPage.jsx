@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   Box,
@@ -23,34 +23,8 @@ import {
   BookmarkBorder,
   Send,
 } from "@mui/icons-material";
-
-const postData = {
-  id: 1,
-  location: "Mumbai, India",
-  date: "Feb 27, 2023",
-  readTime: "8 min read",
-  title: "A Wonderful Journey to India",
-  author: "John Doe",
-  authorAvatar: "https://i.pravatar.cc/150?img=12",
-  image:
-    "https://images.unsplash.com/photo-1625731226721-b4d51ae70e20?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdW1iYWklMjBpbmRpYSUyMGNpdHl8ZW58MXx8fHwxNzY0OTkyODAxfDA&ixlib=rb-4.1.0&q=80&w=1080",
-  tags: ["Travel", "India", "Spirituality", "Culture"],
-  content: `
-    I had always been interested in spirituality, so I decided to take a year-long journey to India to explore various religious practices and traditions.
-
-    My journey began in the holy city of Varanasi, where I witnessed the daily rituals along the Ganges River. The sight of pilgrims bathing in the sacred waters at sunrise was truly mesmerizing. I spent weeks here, learning about Hindu philosophy and meditation practices from local priests and spiritual teachers.
-
-    From Varanasi, I traveled south to Rishikesh, nestled in the foothills of the Himalayas. This yoga capital of the world offered me the perfect environment to deepen my practice. I attended daily yoga classes at various ashrams and learned about different meditation techniques.
-
-    The Golden Temple in Amritsar was my next stop. The Sikh community's hospitality and their practice of serving free meals to thousands of people daily, regardless of their faith or background, left a profound impact on me. It was a beautiful example of selfless service and equality.
-
-    As I journeyed through different regions, I discovered that India's spiritual wealth lies not just in its temples and rituals, but in the everyday lives of its people. The warmth of strangers, the vibrant festivals, the colorful markets, and the delicious street food all contributed to my transformative experience.
-
-    My year in India taught me that spirituality isn't confined to religious places. It's in the simple acts of kindness, in the connections we make with others, and in our ability to find peace within ourselves regardless of our external circumstances.
-
-    This journey changed my perspective on life and helped me understand that true fulfillment comes from within. India, with all its chaos and beauty, showed me that the path to self-discovery is as important as the destination itself.
-  `,
-};
+import LoadingComponent from "../components/LoadingComponent";
+import api from "../../api/api";
 
 const initialComments = [
   {
@@ -84,24 +58,73 @@ const initialComments = [
 
 export default function PostDetail() {
   const { id } = useParams();
+  const [post, setPost] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
-  const [comments, setComments] = useState(initialComments);
+  const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [likedComments, setLikedComments] = useState([]);
 
-  const handleAddComment = () => {
-    if (newComment.trim()) {
-      const comment = {
-        id: comments.length + 1,
-        author: "Current User",
-        avatar: "https://i.pravatar.cc/150?img=1",
-        date: "Just now",
+  const user = JSON.parse(localStorage.getItem("user")) || null;
+
+  // const handleAddComment = () => {
+  //   if (!newComment.trim()) return;
+
+  //   const newCmt = {
+  //     id: comments.length + 1,
+  //     author: "User",
+  //     avatar: "https://i.pravatar.cc/150?img=2",
+  //     date: "Just now",
+  //     content: newComment,
+  //     likes: 0,
+  //   };
+  //   setComments([newCmt, ...comments]);
+  //   setNewComment("");
+  // };
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const res = await api.get(`/comment-post/${id}`);
+        setComments(res.data.data || []);
+      } catch (err) {
+        console.error("Error fetching comments", err);
+      }
+    };
+
+    fetchComments();
+  }, [id]);
+
+  const handleAddComment = async () => {
+    if (!user) {
+      alert("Bạn phải đăng nhập để bình luận!");
+      return;
+    }
+
+    if (!newComment.trim()) return;
+
+    try {
+      const res = await api.post(`/comment-post/${id}`, {
+        userId: user.id,
+        content: newComment,
+      });
+
+      // Lấy comment vừa tạo để append vào danh sách
+      const addedComment = {
+        id: res.data.data.id,
+        author: user.fullname || "User",
+        avatar: user.avatarUrl || "",
+        date: "Vừa xong",
         content: newComment,
         likes: 0,
       };
-      setComments([comment, ...comments]);
+
+      setComments([addedComment, ...comments]);
       setNewComment("");
+    } catch (err) {
+      console.error("Error submitting comment", err);
     }
   };
 
@@ -113,12 +136,37 @@ export default function PostDetail() {
     }
   };
 
+  // --- Fetch bài viết
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        const res = await api.get(`/posts/${id}`);
+        setPost(res.data.data);
+      } catch (err) {
+        console.error("Error fetching post", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPost();
+  }, [id]);
+
+  if (isLoading) return <LoadingComponent />;
+
+  if (!post)
+    return (
+      <Container sx={{ py: 5 }}>
+        <Typography>Không tìm thấy bài viết.</Typography>
+      </Container>
+    );
+
   return (
     <Box sx={{ bgcolor: "#fafafa", minHeight: "100vh" }}>
       <Container maxWidth="md" sx={{ py: 4 }}>
         {/* Back Button & Breadcrumbs */}
         <Box sx={{ mb: 3 }}>
-          <Link to="/" style={{ textDecoration: "none" }}>
+          <Link to="/travel-guides" style={{ textDecoration: "none" }}>
             <Button
               startIcon={<ArrowBack />}
               sx={{ color: "#5b5b5b", textTransform: "none", mb: 2 }}
@@ -130,7 +178,10 @@ export default function PostDetail() {
             <Link to="/" style={{ textDecoration: "none", color: "#5b5b5b" }}>
               Trang chủ
             </Link>
-            <Link to="/" style={{ textDecoration: "none", color: "#5b5b5b" }}>
+            <Link
+              to="/travel-guides"
+              style={{ textDecoration: "none", color: "#5b5b5b" }}
+            >
               Cẩm nang du lịch
             </Link>
             <Typography color="primary">Chi tiết bài viết</Typography>
@@ -142,8 +193,8 @@ export default function PostDetail() {
           {/* Featured Image */}
           <Box
             component="img"
-            src={postData.image}
-            alt={postData.title}
+            src={post.thumbnailUrl}
+            alt={post.title}
             sx={{
               width: "100%",
               height: "500px",
@@ -163,7 +214,7 @@ export default function PostDetail() {
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Typography sx={{ color: "#5b5b5b" }}>
-                  {postData.location}
+                  {post.location}
                 </Typography>
                 <Box
                   sx={{
@@ -174,7 +225,7 @@ export default function PostDetail() {
                   }}
                 />
                 <Typography sx={{ color: "#5b5b5b" }}>
-                  {postData.date}
+                  {new Date(post.createdAt).toLocaleDateString("vi-VN")}
                 </Typography>
                 <Box
                   sx={{
@@ -185,7 +236,7 @@ export default function PostDetail() {
                   }}
                 />
                 <Typography sx={{ color: "#5b5b5b" }}>
-                  {postData.readTime}
+                  {post.readTime} phút đọc
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", gap: 1 }}>
@@ -213,11 +264,11 @@ export default function PostDetail() {
                 mb: 3,
               }}
             >
-              {postData.title}
+              {post.title}
             </Typography>
 
             {/* Author */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+            {/* <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
               <Avatar
                 src={postData.authorAvatar}
                 sx={{ width: 48, height: 48 }}
@@ -230,10 +281,10 @@ export default function PostDetail() {
                   Travel Blogger
                 </Typography>
               </Box>
-            </Box>
+            </Box> */}
 
             {/* Tags */}
-            <Box sx={{ display: "flex", gap: 1, mb: 4, flexWrap: "wrap" }}>
+            {/* <Box sx={{ display: "flex", gap: 1, mb: 4, flexWrap: "wrap" }}>
               {postData.tags.map((tag) => (
                 <Chip
                   key={tag}
@@ -242,13 +293,13 @@ export default function PostDetail() {
                   variant="outlined"
                 />
               ))}
-            </Box>
+            </Box> */}
 
-            <Divider sx={{ mb: 4 }} />
+            {/* <Divider sx={{ mb: 4 }} /> */}
 
             {/* Content */}
             <Box sx={{ mb: 6 }}>
-              {postData.content.split("\n\n").map(
+              {post.content.split("\n\n").map(
                 (paragraph, index) =>
                   paragraph.trim() && (
                     <Typography

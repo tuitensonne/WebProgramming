@@ -125,4 +125,8 @@ $router->get('/posts/locations', [PostController::class, 'getLocations']);
 $router->get('/posts/{postId}/comments', [PostCommentController::class, 'getCommentsByPost']);
 $router->post('/posts/{postId}/comments', [PostCommentController::class, 'createComment']);
 
+$router->get('/posts/{postId}/comments', [CommentPostController::class, 'getCommentsByPost']);
+$router->post('/posts/{postId}/comments', [CommentPostController::class, 'addComment']);
+$router->patch('/comments/{id}/like', [CommentPostController::class, 'likeComment']);
+
 $router->dispatch();
