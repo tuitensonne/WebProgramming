@@ -20,10 +20,10 @@ class TourModel
     private function getIconByCategory(?int $categoryId): string
     {
         $iconMap = [
-            7 => '🏖️',   // Biển Đảo
-            8 => '⛰️',   // Núi Rừng & Trekking
-            9 => '🏛️',   // Di Sản & Văn Hóa
-            10 => '🌆',  // Thành Phố & Giải Trí
+            3 => '🏖️',   // Tour Biển Đảo
+            4 => '⛰️',   // Tour Núi Rừng & Trekking
+            5 => '🏛️',   // Tour Di Sản & Văn Hóa
+            6 => '🌆',  // Tour Thành Phố & Giải Trí
         ];
         return $iconMap[$categoryId] ?? '🎫';
     }
@@ -192,6 +192,7 @@ class TourModel
                     t.durationNights,
                     t.availableSeat,
                     ti.price AS originalPrice,
+                    tcr.categoryId,
                     CASE 
                         WHEN t.availableSeat IS NOT NULL 
                         THEN CONCAT(t.availableSeat, ' Người')
@@ -239,7 +240,7 @@ class TourModel
                 $row['oldPrice'] = null;
 
                 $row['location'] = $row['name'] ?? 'Tour du lịch';
-                $row['icon'] = '🎫'; // Default icon
+                $row['icon'] = $this->getIconByCategory($row['categoryId'] ?? null);
                 // Price, oldPrice, guests, duration come from DB now
                 $row['rating'] = $row['rating'] ?? 0;
                 $row['reviews'] = $row['reviews'] ?? 0;
@@ -298,6 +299,7 @@ class TourModel
                     t.durationNights,
                     t.availableSeat,
                     MAX(ti.price) AS originalPrice,
+                    tcr_type.categoryId,
                     CASE 
                         WHEN t.availableSeat IS NOT NULL 
                         THEN CONCAT(t.availableSeat, ' Người')
@@ -316,6 +318,7 @@ class TourModel
                 FROM Tour t
                 LEFT JOIN TourCategoryRel tcr ON t.id = tcr.tourId
                 LEFT JOIN TourCategory c ON tcr.categoryId = c.id
+                LEFT JOIN TourCategoryRel tcr_type ON t.id = tcr_type.tourId AND tcr_type.categoryId >= 3
                 LEFT JOIN Booking b ON t.id = b.tourId
                 LEFT JOIN (
                     SELECT 
@@ -429,7 +432,7 @@ class TourModel
                 $row['oldPrice'] = null;
 
                 $row['location'] = $row['name'] ?? 'Tour du lịch';
-                $row['icon'] = '🎫'; // Default icon (categoryId no longer in query)
+                $row['icon'] = $this->getIconByCategory($row['categoryId'] ?? null);
                 // Price, oldPrice, guests, duration come from DB now
                 $row['rating'] = $row['rating'] ?? 0;
                 $row['reviews'] = $row['reviews'] ?? 0;
