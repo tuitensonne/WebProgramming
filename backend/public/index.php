@@ -16,12 +16,24 @@ require_once dirname(__DIR__) . '/app/config/env.php';
 loadEnv(dirname(__DIR__) . '/.env');
 require_once dirname(__DIR__) . '/app/Core/Router.php';
 
+// Normalize REQUEST_URI for setups that include index.php in path (e.g. when mod_rewrite isn't active)
+if (isset($_SERVER['REQUEST_URI'])) {
+    error_log("BEFORE_REQUEST_URI: " . $_SERVER['REQUEST_URI']);
+    if (strpos($_SERVER['REQUEST_URI'], '/index.php/') !== false) {
+        $_SERVER['REQUEST_URI'] = str_replace('/index.php', '', $_SERVER['REQUEST_URI']);
+    }
+    error_log("AFTER_REQUEST_URI: " . $_SERVER['REQUEST_URI']);
+}
+
 use App\Core\Router;
 use App\Controllers\BannerController;
 use App\Controllers\SectionController;
 use App\Controllers\FooterController;
 use App\Controllers\TourController;
 use App\Controllers\ContactController;
+use App\Controllers\AuthController;
+use App\Controllers\UserController;
+use App\Controllers\FilterController;
 
 $router = new Router();
 
@@ -59,8 +71,16 @@ $router->post('/comments', [CommentController::class, 'create']);
 /**
  * Tour routes
  */
+$router->get('/tours/representative', [TourController::class, 'getRepresentativeTours']);
 $router->get('/tours/top', [TourController::class, 'getTopToursByCategory']);
 $router->get('/tours/categories', [TourController::class, 'getAllTourCategory']);
+$router->get('/tours', [TourController::class, 'getAllTours']);
+$router->get('/tours/{id}', [TourController::class, 'getTourById']);
+
+/**
+ * Filter routes
+ */
+$router->get('/filters', [FilterController::class, 'getFilterOptions']);
 
 /**
  * Contact routes
@@ -80,11 +100,29 @@ $router->post('/auth/login', [AuthController::class, 'login']);
 /**
  * User routes
  */
-// $router->get('/users', [UserController::class, 'list']);
-// $router->get('/users/{id}', [UserController::class, 'getById']);
-// $router->put('/users/{id}', [UserController::class, 'update']);
-// $router->delete('/users/{id}', [UserController::class, 'delete']);
+$router->get('/users/profile', [UserController::class, 'getProfile']);
+$router->get('/users/{id}', [UserController::class, 'getById']);
+$router->put('/users/{id}', [UserController::class, 'update']);
+$router->put('/users/{id}/profile', [UserController::class, 'updateProfile']);
+$router->post('/users/{id}/avatar', [UserController::class, 'uploadAvatar']);
+$router->get('/users/{id}/payment', [UserController::class, 'getPaymentInfo']);
+$router->put('/users/{id}/payment', [UserController::class, 'updatePaymentInfo']);
+$router->put('/users/{id}/password', [UserController::class, 'changePassword']);
+$router->put('/users/{id}/change-password', [UserController::class, 'changePasswordFixed']);
+$router->delete('/users/{id}', [UserController::class, 'delete']);
+$router->get('/users', [UserController::class, 'list']);
+$router->post('/users/saved-tours', [UserController::class, 'saveTour']);
+$router->delete('/users/saved-tours/{tourId}', [UserController::class, 'unsaveTour']);
+$router->get('/users/saved-tours', [UserController::class, 'getSavedTours']);
 
 // ======= END ROUTES =======
+
+// Backwards-compatible aliases for servers that include index.php in the path
+$router->get('/index.php/footers', [FooterController::class, 'getFooter']);
+$router->get('/index.php/footers/places', [FooterController::class, 'getAllPlacesPagination']);
+$router->get('/index.php/users/profile', [UserController::class, 'getProfile']);
+$router->get('/index.php/users/{id}', [UserController::class, 'getById']);
+$router->get('/index.php/tours', [TourController::class, 'getAllTours']);
+$router->get('/index.php/tours/{id}', [TourController::class, 'getTourById']);
 
 $router->dispatch();

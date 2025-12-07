@@ -118,4 +118,100 @@ class UserModel
             return false;
         }
     }
+
+    /**
+     * Get payment info for user
+     * Returns decoded JSON payment data or null
+     */
+    public function getPaymentInfo(int $id): ?array
+    {
+        try {
+            $query = "SELECT paymentInfo FROM User WHERE id = :id LIMIT 1";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$result || !$result['paymentInfo']) {
+                return null;
+            }
+
+            return json_decode($result['paymentInfo'], true);
+        } catch (PDOException $e) {
+            error_log("Lỗi getPaymentInfo: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Update payment info for user (card, bank, etc.)
+     * Stores as JSON in paymentInfo column
+     */
+    public function updatePaymentInfo(int $id, array $paymentData): bool
+    {
+        try {
+            $paymentJson = json_encode($paymentData);
+            $query = "UPDATE User SET paymentInfo = :paymentInfo WHERE id = :id";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':paymentInfo', $paymentJson, PDO::PARAM_STR);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Lỗi updatePaymentInfo: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Update user profile (name, email, phone, dateOfBirth, avatar)
+     */
+    public function updateProfile(int $id, array $data): bool
+    {
+        try {
+            $allowedFields = ['fullName', 'email', 'phone', 'avatarUrl', 'dateOfBirth'];
+            $fields = [];
+            $params = [':id' => $id];
+
+            foreach ($allowedFields as $field) {
+                if (isset($data[$field])) {
+                    $fields[] = "$field = :$field";
+                    $params[":$field"] = $data[$field];
+                }
+            }
+
+            if (empty($fields)) {
+                return true; // No fields to update
+            }
+
+            $query = "UPDATE User SET " . implode(', ', $fields) . " WHERE id = :id";
+            $stmt = $this->db->prepare($query);
+
+            return $stmt->execute($params);
+        } catch (PDOException $e) {
+            error_log("Lỗi updateProfile: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Change user password
+     */
+    public function changePassword(int $id, string $newPassword): bool
+    {
+        try {
+            $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+            $query = "UPDATE User SET password = :password WHERE id = :id";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':password', $hashedPassword, PDO::PARAM_STR);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Lỗi changePassword: " . $e->getMessage());
+            return false;
+        }
+    }
 }

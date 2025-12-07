@@ -13,6 +13,8 @@ import {
   ListItem,
   ListItemText,
   useMediaQuery,
+  Avatar,
+  Typography,
 } from "@mui/material";
 import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
@@ -59,9 +61,9 @@ const ActionButton = styled(Button)(({ theme }) => ({
 
 const Header = () => {
   const navigate = useNavigate();
-  const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isFixed, setIsFixed] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const location = useLocation();
   const theme = useTheme();
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
@@ -76,9 +78,26 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
-  const handleMenuClose = () => setAnchorEl(null);
+  // Đọc thông tin user từ localStorage mỗi khi route thay đổi
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      setCurrentUser(stored ? JSON.parse(stored) : null);
+    } catch (e) {
+      console.warn("Failed to parse stored user", e);
+      setCurrentUser(null);
+    }
+  }, [location]);
+
   const toggleDrawer = (open) => () => setDrawerOpen(open);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setCurrentUser(null);
+    navigate('/');
+    window.location.reload();
+  };
 
   const menuItems = [
     { label: "Du lịch trong nước", path: "/domestic" },
@@ -169,28 +188,49 @@ const Header = () => {
                 >
                   Liên hệ
                 </Button>
-                <ActionButton
-                  variant="outlined"
-                  onClick={() => navigate("/register")}
-                  sx={{
-                    borderColor: "#1976d2",
-                    color: "#1976d2",
-                    borderWidth: 2,
-                    padding: isFixed ? "6px 18px" : "10px 24px",
-                  }}
-                >
-                  Đăng ký
-                </ActionButton>
-                <ActionButton
-                  variant="contained"
-                  onClick={() => navigate("/login")}
-                  sx={{
-                    backgroundColor: "#1976d2",
-                    padding: isFixed ? "6px 18px" : "10px 24px",
-                  }}
-                >
-                  Đăng nhập
-                </ActionButton>
+                {!currentUser ? (
+                  <>
+                    <ActionButton
+                      variant="outlined"
+                      onClick={() => navigate("/register")}
+                      sx={{
+                        borderColor: "#1976d2",
+                        color: "#1976d2",
+                        borderWidth: 2,
+                        padding: isFixed ? "6px 18px" : "10px 24px",
+                      }}
+                    >
+                      Đăng ký
+                    </ActionButton>
+                    <ActionButton
+                      variant="contained"
+                      onClick={() => navigate("/login")}
+                      sx={{
+                        backgroundColor: "#1976d2",
+                        padding: isFixed ? "6px 18px" : "10px 24px",
+                      }}
+                    >
+                      Đăng nhập
+                    </ActionButton>
+                  </>
+                ) : (
+                  <Box
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    onClick={() => navigate("/profile")}
+                  >
+                    <Avatar
+                      src={currentUser.avatarUrl || currentUser.avatar || ""}
+                      alt={currentUser.fullName || currentUser.email || "User"}
+                      sx={{ width: 36, height: 36, cursor: "pointer" }}
+                    />
+                    <Typography
+                      variant="body1"
+                      sx={{ color: "#333", fontWeight: 600, cursor: "pointer" }}
+                    >
+                      {currentUser.fullName || currentUser.email}
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             )}
 
@@ -199,27 +239,61 @@ const Header = () => {
                 <Button sx={{ color: "#666", textTransform: "none" }}>
                   Đặt tour
                 </Button>
-                <ActionButton
-                  variant="contained"
-                  sx={{ backgroundColor: "#1976d2" }}
-                >
-                  Đăng nhập
-                </ActionButton>
+                {!currentUser ? (
+                  <ActionButton
+                    variant="contained"
+                    sx={{ backgroundColor: "#1976d2" }}
+                    onClick={() => navigate("/login")}
+                  >
+                    Đăng nhập
+                  </ActionButton>
+                ) : (
+                  <Box
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    onClick={() => navigate("/profile")}
+                  >
+                    <Avatar
+                      src={currentUser.avatarUrl || currentUser.avatar || ""}
+                      alt={currentUser.fullName || currentUser.email}
+                      sx={{ width: 32, height: 32 }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "#333", fontWeight: 600 }}
+                    >
+                      {currentUser.fullName || currentUser.email}
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             )}
 
             {isMobile && (
               <Box sx={{ position: "absolute", right: 0 }}>
-                <ActionButton
-                  variant="contained"
-                  sx={{
-                    backgroundColor: "#1976d2",
-                    padding: "8px 16px",
-                    fontSize: "13px",
-                  }}
-                >
-                  Đăng nhập
-                </ActionButton>
+                {!currentUser ? (
+                  <ActionButton
+                    variant="contained"
+                    sx={{
+                      backgroundColor: "#1976d2",
+                      padding: "8px 16px",
+                      fontSize: "13px",
+                    }}
+                    onClick={() => navigate("/login")}
+                  >
+                    Đăng nhập
+                  </ActionButton>
+                ) : (
+                  <Box
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    onClick={() => navigate("/profile")}
+                  >
+                    <Avatar
+                      src={currentUser.avatarUrl || currentUser.avatar || ""}
+                      alt={currentUser.fullName || currentUser.email}
+                      sx={{ width: 32, height: 32 }}
+                    />
+                  </Box>
+                )}
               </Box>
             )}
           </Toolbar>
@@ -231,7 +305,9 @@ const Header = () => {
                   <NavButton
                     key={item.label}
                     endIcon={<KeyboardArrowDownIcon />}
-                    onClick={handleMenuOpen}
+                    onClick={() => {
+                      if (item.path) navigate(item.path);
+                    }}
                   >
                     {item.label}
                   </NavButton>

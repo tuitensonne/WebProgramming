@@ -33,6 +33,11 @@ class Router {
             $uri = substr($uri, strlen($this->basePath));
         }
 
+        // Normalize URIs that include '/index.php' anywhere (some Apache setups add index.php into the path)
+        if (strpos($uri, '/index.php') !== false) {
+            $uri = str_replace('/index.php', '', $uri);
+        }
+
         if (empty($uri)) $uri = '/';
 
         if (isset($this->routes[$method][$uri])) {

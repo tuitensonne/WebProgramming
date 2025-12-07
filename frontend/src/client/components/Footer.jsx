@@ -66,17 +66,24 @@ export default function Footer({ data }) {
     fetchFooter();
   }, [data]);
 
-  if (!footerData) return null;
+  // Fallback footer data if no API data
+  const defaultFooterData = {
+    company_name: "Viatours",
+    slogan: "Khám phá thế giới cùng chúng tôi",
+    email: "contact@viatours.com",
+    hotline: "1900-1000",
+    address: "123 Nguyễn Hữu Cảnh, TP.HCM",
+    facebook_link: "https://facebook.com",
+    instagram_link: "https://instagram.com",
+    places: [
+      { city: "Hà Nội", name: "Hà Nội" },
+      { city: "TP Hồ Chí Minh", name: "TP Hồ Chí Minh" },
+      { city: "Đà Nẵng", name: "Đà Nẵng" },
+    ],
+  };
 
-  const {
-    company_name,
-    slogan,
-    facebook_link,
-    instagram_link,
-    places = [],
-  } = footerData;
-
-  const countries = [...new Set(places.map((p) => p.city))];
+  const displayFooterData = footerData || defaultFooterData;
+  const countries = [...new Set(displayFooterData.places.map((p) => p.city))];
 
   return (
     <FooterWrapper>
@@ -107,7 +114,7 @@ export default function Footer({ data }) {
                 fontSize: { xs: "1.5rem", md: "1.8rem" },
               }}
             >
-              {company_name}
+              {displayFooterData.company_name}
             </Typography>
 
             <Typography
@@ -119,7 +126,7 @@ export default function Footer({ data }) {
                 fontSize: { xs: "1rem", md: "1rem" },
               }}
             >
-              {slogan}
+              {displayFooterData.slogan}
             </Typography>
 
             {/* Mạng xã hội */}
@@ -142,7 +149,7 @@ export default function Footer({ data }) {
                   },
                 }}
                 component="a"
-                href={facebook_link}
+                href={displayFooterData.facebook_link}
                 target="_blank"
               >
                 <FacebookIcon />
@@ -159,7 +166,7 @@ export default function Footer({ data }) {
                   },
                 }}
                 component="a"
-                href={instagram_link}
+                href={displayFooterData.instagram_link}
                 target="_blank"
               >
                 <Instagram />
@@ -171,19 +178,19 @@ export default function Footer({ data }) {
                 variant="body2"
                 sx={{ fontSize: { xs: "0.95rem", md: "1rem" }, mb: 0.5 }}
               >
-                {footerData.email}
+                {displayFooterData.email}
               </Typography>
               <Typography
                 variant="body2"
                 sx={{ fontSize: { xs: "0.95rem", md: "1rem" }, mb: 0.5 }}
               >
-                {footerData.hotline}
+                {displayFooterData.hotline}
               </Typography>
               <Typography
                 variant="body2"
                 sx={{ fontSize: { xs: "0.95rem", md: "1rem" } }}
               >
-                {footerData.address}
+                {displayFooterData.address}
               </Typography>
             </Box>
           </Grid>

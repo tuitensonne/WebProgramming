@@ -8,6 +8,7 @@ use App\Models\CategoryModel;
 class TourController extends Controller
 {
     private TourModel $tourModel;
+    private CategoryModel $categoryModel;
 
     public function __construct() {
         $this->tourModel = new TourModel();
@@ -51,6 +52,74 @@ class TourController extends Controller
             return $this->success($categories, 'Fetched categories successfully');
         } catch (\Exception $e) {
             return $this->error('Failed to fetch categories', 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Lấy 1 representative tour cho mỗi loại tour category
+     * GET /tours/representative
+     */
+    public function getRepresentativeTours() {
+        try {
+            $tours = $this->tourModel->getRepresentativeTours();
+
+            if (!$tours) {
+                return $this->error('No tours found', 404);
+            }
+
+            return $this->success($tours, 'Fetched representative tours successfully');
+        } catch (\Exception $e) {
+            return $this->error('Failed to fetch representative tours', 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Lấy tất cả tour hoặc filter theo category/tourType/location/duration
+     * GET /tours?categoryId={id}&tourType={type}&sortBy={sortBy}&location={location}&duration={duration}&limit={limit}&offset={offset}
+     * Also accepts 'category' as alias for 'categoryId'
+     */
+    public function getAllTours() {
+        try {
+            $categoryId = $_GET['categoryId'] ?? $_GET['category'] ?? null;
+            $tourType = $_GET['tourType'] ?? null;
+            $sortBy = $_GET['sortBy'] ?? null;
+            $location = $_GET['location'] ?? null;
+            $duration = $_GET['duration'] ?? null;
+            $limit = (int)($_GET['limit'] ?? 20);
+            $offset = (int)($_GET['offset'] ?? 0);
+
+            $tours = $this->tourModel->getAllTours($categoryId, $limit, $offset, $tourType, $sortBy, $location, $duration);
+
+            // Return empty array instead of error if no tours found
+            if ($tours === null) {
+                return $this->success([], 'No tours found');
+            }
+
+            return $this->success($tours, 'Fetched tours successfully');
+        } catch (\Exception $e) {
+            return $this->error('Failed to fetch tours', 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Lấy chi tiết một tour theo ID
+     * GET /tours/{id}
+     */
+    public function getTourById($id) {
+        try {
+            if (!$id || !is_numeric($id)) {
+                return $this->error('Invalid tour ID', 400);
+            }
+
+            $tour = $this->tourModel->getTourById((int)$id);
+
+            if (!$tour) {
+                return $this->error('Tour not found', 404);
+            }
+
+            return $this->success($tour, 'Fetched tour successfully');
+        } catch (\Exception $e) {
+            return $this->error('Failed to fetch tour', 500, $e->getMessage());
         }
     }
 }

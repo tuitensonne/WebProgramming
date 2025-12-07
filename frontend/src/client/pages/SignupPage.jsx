@@ -27,8 +27,8 @@ import {
 } from "@mui/icons-material";
 
 import signup from "../../assets/images/signup.png";
-
 import logo from "../../assets/images/logo.png";
+import api from "../../api/api";
 const slideFromRight = keyframes`
   from {
     transform: translateX(100%);
@@ -67,6 +67,7 @@ export default function SignUpPage() {
   const [touched, setTouched] = useState({});
   const [resetEmail, setResetEmail] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -148,9 +149,80 @@ export default function SignUpPage() {
     });
 
     if (validateForm()) {
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-      // TODO: Call API here
+      (async () => {
+        try {
+          setLoading(true);
+
+          // Call backend signup endpoint
+          const resp = await api.post("/auth/signup", {
+            fullName: formData.fullname,
+            email: formData.email,
+            phone: formData.phone,
+            password: formData.password,
+          });
+
+          console.log("Signup response:", resp);
+          const data = resp.data?.data || resp.data;
+          console.log("Signup data:", data);
+
+          setShowSuccess(true);
+
+          // Auto-login after successful signup (optional)
+          // Try to login with the credentials they just provided
+          try {
+            const loginResp = await api.post("/auth/login", {
+              email: formData.email,
+              password: formData.password,
+            });
+            
+            const loginData = loginResp.data?.data || loginResp.data;
+            const token = loginData?.token;
+            const user = loginData?.user;
+
+            if (token) {
+              localStorage.setItem("token", token);
+            }
+
+            // Fetch full profile after login and store it (ensures fullName/phone present)
+            let userToStore = user;
+            if (user && user.id && token) {
+              try {
+                const profileRes = await api.get(`/users/${user.id}`, {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                const profileData = profileRes.data?.data || profileRes.data;
+                if (profileData) userToStore = profileData;
+              } catch (e) {
+                console.warn('Auto-login: could not fetch full profile', e);
+              }
+            }
+
+            if (userToStore) {
+              localStorage.setItem("user", JSON.stringify(userToStore));
+            }
+
+            // Redirect to landing page after successful login
+            setTimeout(() => {
+              navigate("/", { replace: true });
+            }, 500);
+          } catch (loginErr) {
+            console.log("Auto-login failed, user can login manually:", loginErr);
+            // Just redirect to login page if auto-login fails
+            setTimeout(() => {
+              navigate("/login", { replace: true });
+            }, 1500);
+          }
+        } catch (err) {
+          console.error("Signup error:", err);
+          console.error("Error response:", err?.response?.data);
+          
+          const msg = err?.response?.data?.message || err?.response?.data?.error || err.message || "Signup failed";
+          alert(msg);
+          setShowSuccess(false);
+        } finally {
+          setLoading(false);
+        }
+      })();
     }
   };
 
@@ -471,6 +543,7 @@ export default function SignUpPage() {
               variant="contained"
               size="large"
               type="submit"
+              disabled={loading}
               sx={{
                 mt: 3,
                 mb: 2,
@@ -487,7 +560,7 @@ export default function SignUpPage() {
                 },
               }}
             >
-              Đăng ký
+              {loading ? "Đang đăng ký..." : "Đăng ký"}
             </Button>
 
             <Box

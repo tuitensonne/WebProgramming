@@ -13,6 +13,7 @@ import {
   Container,
   keyframes,
 } from "@mui/material";
+import api from "../../api/api";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import logo from "../../assets/images/logo.png";
 import login from "../../assets/images/login.png";
@@ -48,11 +49,64 @@ export default function LoginPage() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      alert("Login successful!");
-      setLoading(false);
-    }, 1000);
+    (async () => {
+      try {
+        setLoading(true);
+
+        if (!email || !password) {
+          alert("Email and password are required");
+          setLoading(false);
+          return;
+        }
+
+        console.log("Attempting login with email:", email);
+        const resp = await api.post("/auth/login", { email, password });
+        console.log("Login response:", resp);
+        
+        const data = resp.data?.data || resp.data;
+        console.log("Parsed data:", data);
+
+        const token = data?.token || (data && data.token);
+        const user = data?.user || (data && data.user);
+
+        console.log("Token:", token);
+        console.log("User:", user);
+
+        if (token) {
+          localStorage.setItem("token", token);
+        }
+
+        // Try to fetch the full user profile from backend to ensure all fields (fullName, phone) are present
+        let userToStore = user;
+        if (user && user.id && token) {
+          try {
+            const profileRes = await api.get(`/users/${user.id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const profileData = profileRes.data?.data || profileRes.data;
+            if (profileData) userToStore = profileData;
+          } catch (e) {
+            console.warn('Could not fetch full profile after login', e);
+          }
+        }
+
+        if (userToStore) {
+          localStorage.setItem("user", JSON.stringify(userToStore));
+        }
+
+        // Navigate to landing page after successful login
+        navigate("/", { replace: true });
+      } catch (err) {
+        console.error("Login error:", err);
+        console.error("Error response:", err?.response?.data);
+        console.error("Error status:", err?.response?.status);
+        
+        const msg = err?.response?.data?.message || err?.response?.data?.error || err.message || "Login failed";
+        alert(msg);
+      } finally {
+        setLoading(false);
+      }
+    })();
   };
 
   return (

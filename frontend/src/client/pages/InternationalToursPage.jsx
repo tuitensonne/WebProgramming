@@ -37,7 +37,113 @@ const BreadcrumbContainer = styled.nav`
   margin: 0 auto;
   display: flex;
   align-items: center;
-  
+  gap: 8px;
+  background: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+`;
+
+const BreadcrumbLink = styled(Link)`
+  display: flex;
+  align-items: center;
+  color: #666;
+  text-decoration: none;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #0d6efd;
+  }
+`;
+
+const BreadcrumbCurrent = styled.span`
+  color: #333;
+  font-weight: 500;
+`;
+
+const Separator = styled(IconChevronRight)`
+  color: #999;
+  flex-shrink: 0;
+`;
+
+const FilterBar = styled.div`
+  background: #f5f5f5;
+  padding: 0 60px 24px;
+
+  @media (max-width: 1200px) {
+    padding: 0 40px 24px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0 20px 20px;
+  }
+`;
+
+const FilterContainer = styled.div`
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 1024px) {
+    flex-wrap: wrap;
+  }
+`;
+
+const FilterSelect = styled.select`
+  flex: 1;
+  min-width: 150px;
+  padding: 12px 40px 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #666;
+  background: white;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #0d6efd;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+  }
+
+  @media (max-width: 1024px) {
+    flex: 1 1 calc(50% - 6px);
+  }
+
+  @media (max-width: 640px) {
+    flex: 1 1 100%;
+  }
+`;
+
+const ViewPriceButton = styled.button`
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 180, 219, 0.3);
 
   &:hover {
     transform: translateY(-2px);
@@ -146,7 +252,7 @@ const FavoriteButton = styled.button`
 `;
 
 const TourContent = styled.div`
-  padding: 20px 20px 0;
+  padding: 20px 20px 16px;
 `;
 
 const TourLocation = styled.h3`
@@ -166,7 +272,7 @@ const TourInfo = styled.div`
 const InfoRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   color: #666;
   font-size: 14px;
 
@@ -184,13 +290,13 @@ const PriceRow = styled.div`
   margin-bottom: 8px;
 `;
 
-const PriceValue = styled.span`
+const PriceValue = styled.div`
   font-size: 20px;
   font-weight: 700;
   color: #ff4757;
 `;
 
-const OldPrice = styled.span`
+const OldPrice = styled.div`
   font-size: 14px;
   color: #999;
   text-decoration: line-through;
@@ -199,24 +305,24 @@ const OldPrice = styled.span`
 const RatingRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 20px;
-  margin-bottom: 16px;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid #f0f0f0;
 `;
 
 const Stars = styled.div`
   display: flex;
-  align-items: center;
-  color: #ffc107;
+  gap: 6px;
+  color: #ffa500;
 `;
 
-const ReviewCount = styled.span`
-  font-size: 14px;
+const ReviewCount = styled.div`
   color: #666;
+  font-size: 13px;
 `;
 
 const ButtonWrapper = styled.div`
-  padding: 0 20px 20px;
+  padding: 12px 20px 20px 20px;
 `;
 
 const BookButton = styled.button`
@@ -242,7 +348,6 @@ const InternationalToursPage = () => {
     location: '',
     duration: '',
     category: '',
-    discount: '',
     price: '',
     sortBy: ''
   });
@@ -253,199 +358,20 @@ const InternationalToursPage = () => {
     categories: []
   });
 
-  const mockTours = [
-    {
-      id: 1,
-      location: "Switzerland",
-      country: "🇨🇭",
-      departure: "Thứ 7 Hàng Tuần",
-      guests: "15 Người",
-      address: "Zurich, Geneva",
-      duration: "5 Ngày 4 Đêm",
-      rating: 4.8,
-      reviews: 24,
-      price: 45000000,
-      oldPrice: 52000000,
-      image: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=500&h=300&fit=crop",
-      liked: false
-    },
-    {
-      id: 2,
-      location: "France",
-      country: "🇫🇷",
-      departure: "Thứ 7 Hàng Tuần",
-      guests: "20 Người",
-      address: "Paris, Lyon",
-      duration: "6 Ngày 5 Đêm",
-      rating: 4.9,
-      reviews: 35,
-      price: 38000000,
-      oldPrice: 45000000,
-      image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=500&h=300&fit=crop",
-      liked: false
-    },
-    {
-      id: 3,
-      location: "Japan",
-      country: "🇯🇵",
-      departure: "Thứ 7 Hàng Tuần",
-      guests: "18 Người",
-      address: "Tokyo, Osaka",
-      duration: "7 Ngày 6 Đêm",
-      rating: 4.9,
-      reviews: 42,
-      price: 42000000,
-      oldPrice: 48000000,
-      image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=500&h=300&fit=crop",
-      liked: false
-    },
-    {
-      id: 4,
-      location: "Italy",
-      country: "🇮🇹",
-      departure: "Thứ 7 Hàng Tuần",
-      guests: "15 Người",
-      address: "Rome, Venice",
-      duration: "6 Ngày 5 Đêm",
-      rating: 4.7,
-      reviews: 28,
-      price: 40000000,
-      oldPrice: 46000000,
-      image: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=500&h=300&fit=crop",
-      liked: false
-    },
-    {
-      id: 5,
-      location: "United Kingdom",
-      country: "🇬🇧",
-      departure: "Thứ 7 Hàng Tuần",
-      guests: "20 Người",
-      address: "London, Edinburgh",
-      duration: "5 Ngày 4 Đêm",
-      rating: 4.6,
-      reviews: 31,
-      price: 44000000,
-      oldPrice: 50000000,
-      image: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=500&h=300&fit=crop",
-      liked: false
-    },
-    {
-      id: 6,
-      location: "Thailand",
-      country: "🇹🇭",
-      departure: "Thứ 7 Hàng Tuần",
-      guests: "15 Người",
-      address: "Bangkok, Phuket",
-      duration: "4 Ngày 3 Đêm",
-      rating: 4.8,
-      reviews: 38,
-      price: 18000000,
-      oldPrice: 22000000,
-      image: "https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?w=500&h=300&fit=crop",
-      liked: false
-    },
-    {
-      id: 7,
-      location: "South Korea",
-      country: "🇰🇷",
-      departure: "Thứ 7 Hàng Tuần",
-      guests: "18 Người",
-      address: "Seoul, Busan",
-      duration: "5 Ngày 4 Đêm",
-      rating: 4.7,
-      reviews: 29,
-      price: 25000000,
-      oldPrice: 30000000,
-      image: "https://images.unsplash.com/photo-1517154421773-0529f29ea451?w=500&h=300&fit=crop",
-      liked: false
-    },
-    {
-      id: 8,
-      location: "Australia",
-      country: "🇦🇺",
-      departure: "Thứ 7 Hàng Tuần",
-      guests: "15 Người",
-      address: "Sydney, Melbourne",
-      duration: "8 Ngày 7 Đêm",
-      rating: 4.9,
-      reviews: 33,
-      price: 55000000,
-      oldPrice: 62000000,
-      image: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=500&h=300&fit=crop",
-      liked: false
-    },
-    {
-      id: 9,
-      location: "United States",
-      country: "🇺🇸",
-      departure: "Thứ 7 Hàng Tuần",
-      guests: "20 Người",
-      address: "New York, Los Angeles",
-      duration: "10 Ngày 9 Đêm",
-      rating: 4.8,
-      reviews: 45,
-      price: 65000000,
-      oldPrice: 75000000,
-      image: "https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?w=500&h=300&fit=crop",
-      liked: false
-    }
-  ];
-
   const [tours, setTours] = useState([]);
   const [page, setPage] = useState(1);
   const pageSize = 6;
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [totalPages, setTotalPages] = useState(null);
+  const [totalPages, setTotalPages] = useState(1);
 
   const handleFilterChange = (field, value) => {
     setFilters({ ...filters, [field]: value });
   };
 
   const handleViewPrice = async () => {
-    setLoading(true);
-    try {
-      // Build query parameters from filters
-      const params = new URLSearchParams();
-      
-      if (filters.location) {
-        params.append('location', filters.location);
-      }
-      if (filters.duration) {
-        params.append('duration', filters.duration);
-      }
-      if (filters.category) {
-        params.append('categoryId', filters.category);
-      }
-      if (filters.sortBy) {
-        params.append('sortBy', filters.sortBy);
-      }
-      
-      // Always get 'international' tour type
-      params.append('tourType', 'international');
-      params.append('limit', pageSize);
-      params.append('offset', 0);
-      
-      const res = await api.get(`/tours?${params.toString()}`);
-      const data = res.data?.data || [];
-      
-      setTours(data);
-      setPage(1);
-      const more = data.length === pageSize;
-      setHasMore(more);
-      setTotalPages(more ? 10 : 1); // Estimate for filtered results
-    } catch (err) {
-      console.log('Error fetching filtered tours:', err);
-      alert('Không tìm thấy tour phù hợp với bộ lọc của bạn');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleLike = (id) => {
-    setTours(tours.map(tour => 
-      tour.id === id ? { ...tour, liked: !tour.liked } : tour
-    ));
+    setPage(1); // Reset to page 1 when applying filters
+    // The useEffect will handle the actual fetch with filters
   };
 
   const formatPrice = (price) => {
@@ -455,30 +381,109 @@ const InternationalToursPage = () => {
     }).format(price);
   };
 
+  const toggleLike = async (id) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Vui lòng đăng nhập để lưu tour');
+      return;
+    }
+
+    const tour = tours.find(t => t.id === id);
+    const newLikedState = !tour?.liked;
+
+    // Optimistically update UI
+    setTours(prev => prev.map(t => t.id === id ? { ...t, liked: newLikedState } : t));
+
+    try {
+      if (newLikedState) {
+        await api.post('/users/saved-tours', { tourId: id });
+      } else {
+        await api.delete(`/users/saved-tours/${id}`);
+      }
+    } catch (err) {
+      console.log('Error saving/unsaving tour:', err);
+      // Revert UI on error
+      setTours(prev => prev.map(t => t.id === id ? { ...t, liked: !newLikedState } : t));
+      
+      // Show user-friendly error message
+      if (err.response?.status === 401) {
+        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else {
+        alert('Có lỗi xảy ra. Vui lòng thử lại.');
+      }
+    }
+  };
+
   useEffect(() => {
     const fetchTours = async () => {
       setLoading(true);
       try {
         const offset = (page - 1) * pageSize;
         const params = { limit: pageSize, offset, tourType: 'international' };
+        
+        // Apply all filters
+        if (filters.location) {
+          params.location = filters.location;
+        }
+        if (filters.duration) {
+          params.duration = filters.duration;
+        }
+        if (filters.category) {
+          params.categoryId = filters.category;
+        }
         if (filters.sortBy) {
           params.sortBy = filters.sortBy;
         }
+        
         const res = await api.get('/tours', { params });
         const data = res.data?.data || [];
         if (!data || data.length === 0) {
-          // No data from backend — show empty state
+          // No data returned from backend — show empty state
           setTours([]);
           setHasMore(false);
           setTotalPages(page);
         } else {
+          // Fetch saved tours to set liked state
+          const token = localStorage.getItem('token');
+          if (token) {
+            try {
+              const savedRes = await api.get('/users/saved-tours');
+              const savedTours = savedRes.data?.data || [];
+              const savedTourIds = new Set(savedTours.map(t => t.id));
+              // Set liked state for tours that are saved
+              data.forEach(tour => {
+                tour.liked = savedTourIds.has(tour.id);
+              });
+            } catch (err) {
+              // If fetch saved tours fails (e.g., token expired), just continue without liked state
+              if (err.response?.status !== 401) {
+                console.log('Error fetching saved tours:', err);
+              }
+            }
+          }
+          
           setTours(data);
           const more = data.length === pageSize;
           setHasMore(more);
           if (!more) {
+            // No more data, current page is the last page
             setTotalPages(page);
           } else {
-            setTotalPages(prev => prev ? Math.max(prev, page + 5) : page + 5);
+            // Still have more data
+            setTotalPages(prev => {
+              // If we're on page 1 and have data, estimate a reasonable number of pages
+              if (page === 1) {
+                // Estimate at least 10 pages if we have data on page 1
+                return Math.max(prev || 0, 10);
+              }
+              // For other pages, only increase totalPages if we're very close to the limit
+              if (prev && page >= prev - 1) {
+                // We're at the limit, increase it by 3 (more conservative)
+                return prev + 3;
+              }
+              // Keep existing totalPages if we haven't reached it yet
+              return prev || page + 1;
+            });
           }
         }
       } catch (err) {
@@ -492,7 +497,7 @@ const InternationalToursPage = () => {
     };
 
     fetchTours();
-  }, [page, filters.sortBy]);
+  }, [page, filters.sortBy, filters.location, filters.duration, filters.category]);
 
   useEffect(() => {
     const fetchFilterOptions = async () => {
@@ -556,17 +561,6 @@ const InternationalToursPage = () => {
             {filterOptions.categories.map((cat) => (
               <option key={cat.id} value={cat.id}>{cat.tourCategoryName}</option>
             ))}
-          </FilterSelect>
-
-          <FilterSelect 
-            value={filters.discount}
-            onChange={(e) => handleFilterChange('discount', e.target.value)}
-          >
-            <option value="">Giảm giá</option>
-            <option value="10">Giảm 10%</option>
-            <option value="20">Giảm 20%</option>
-            <option value="30">Giảm 30%</option>
-            <option value="50">Giảm 50%</option>
           </FilterSelect>
 
           <FilterSelect 

@@ -348,7 +348,6 @@ const DomesticToursPage = () => {
     location: '',
     duration: '',
     category: '',
-    discount: '',
     price: '',
     sortBy: ''
   });
@@ -373,49 +372,41 @@ const DomesticToursPage = () => {
   };
 
   const handleViewPrice = async () => {
-    setLoading(true);
-    try {
-      // Build query parameters from filters
-      const params = new URLSearchParams();
-      
-      if (filters.location) {
-        params.append('location', filters.location);
-      }
-      if (filters.duration) {
-        params.append('duration', filters.duration);
-      }
-      if (filters.category) {
-        params.append('categoryId', filters.category);
-      }
-      if (filters.sortBy) {
-        params.append('sortBy', filters.sortBy);
-      }
-      
-      // Always get 'domestic' tour type
-      params.append('tourType', 'domestic');
-      params.append('limit', pageSize);
-      params.append('offset', 0);
-      
-      const res = await api.get(`/tours?${params.toString()}`);
-      const data = res.data?.data || [];
-      
-      setTours(data);
-      setPage(1);
-      const more = data.length === pageSize;
-      setHasMore(more);
-      setTotalPages(more ? 10 : 1); // Estimate for filtered results
-    } catch (err) {
-      console.log('Error fetching filtered tours:', err);
-      alert('Không tìm thấy tour phù hợp với bộ lọc của bạn');
-    } finally {
-      setLoading(false);
-    }
+    setPage(1); // Reset to page 1 when applying filters
+    // The useEffect will handle the actual fetch with filters
   };
 
-  const toggleLike = (id) => {
-    setTours(tours.map(tour => 
-      tour.id === id ? { ...tour, liked: !tour.liked } : tour
-    ));
+  const toggleLike = async (id) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Vui lòng đăng nhập để lưu tour');
+      return;
+    }
+
+    const tour = tours.find(t => t.id === id);
+    const newLikedState = !tour?.liked;
+
+    // Optimistically update UI
+    setTours(prev => prev.map(t => t.id === id ? { ...t, liked: newLikedState } : t));
+
+    try {
+      if (newLikedState) {
+        await api.post('/users/saved-tours', { tourId: id });
+      } else {
+        await api.delete(`/users/saved-tours/${id}`);
+      }
+    } catch (err) {
+      console.log('Error saving/unsaving tour:', err);
+      // Revert UI on error
+      setTours(prev => prev.map(t => t.id === id ? { ...t, liked: !newLikedState } : t));
+      
+      // Show user-friendly error message
+      if (err.response?.status === 401) {
+        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else {
+        alert('Có lỗi xảy ra. Vui lòng thử lại.');
+      }
+    }
   };
 
   const formatPrice = (price) => {
@@ -431,9 +422,21 @@ const DomesticToursPage = () => {
       try {
         const offset = (page - 1) * pageSize;
         const params = { limit: pageSize, offset, tourType: 'domestic' };
+        
+        // Apply all filters
+        if (filters.location) {
+          params.location = filters.location;
+        }
+        if (filters.duration) {
+          params.duration = filters.duration;
+        }
+        if (filters.category) {
+          params.categoryId = filters.category;
+        }
         if (filters.sortBy) {
           params.sortBy = filters.sortBy;
         }
+        
         const res = await api.get('/tours', { params });
         const data = res.data?.data || [];
         if (!data || data.length === 0) {
@@ -442,13 +445,47 @@ const DomesticToursPage = () => {
           setHasMore(false);
           setTotalPages(page);
         } else {
+          // Fetch saved tours to set liked state
+          const token = localStorage.getItem('token');
+          if (token) {
+            try {
+              const savedRes = await api.get('/users/saved-tours');
+              const savedTours = savedRes.data?.data || [];
+              const savedTourIds = new Set(savedTours.map(t => t.id));
+              // Set liked state for tours that are saved
+              data.forEach(tour => {
+                tour.liked = savedTourIds.has(tour.id);
+              });
+            } catch (err) {
+              // If fetch saved tours fails (e.g., token expired), just continue without liked state
+              if (err.response?.status !== 401) {
+                console.log('Error fetching saved tours:', err);
+              }
+            }
+          }
+          
           setTours(data);
           const more = data.length === pageSize;
           setHasMore(more);
           if (!more) {
+            // No more data, current page is the last page
             setTotalPages(page);
           } else {
-            setTotalPages(prev => prev ? Math.max(prev, page + 5) : page + 5);
+            // Still have more data
+            setTotalPages(prev => {
+              // If we're on page 1 and have data, estimate a reasonable number of pages
+              if (page === 1) {
+                // Estimate at least 10 pages if we have data on page 1
+                return Math.max(prev || 0, 10);
+              }
+              // For other pages, only increase totalPages if we're very close to the limit
+              if (prev && page >= prev - 1) {
+                // We're at the limit, increase it by 3 (more conservative)
+                return prev + 3;
+              }
+              // Keep existing totalPages if we haven't reached it yet
+              return prev || page + 1;
+            });
           }
         }
       } catch (err) {
@@ -462,7 +499,7 @@ const DomesticToursPage = () => {
     };
 
     fetchTours();
-  }, [page, filters.sortBy]);
+  }, [page, filters.sortBy, filters.location, filters.duration, filters.category]);
 
   useEffect(() => {
     const fetchFilterOptions = async () => {
@@ -526,17 +563,6 @@ const DomesticToursPage = () => {
             {filterOptions.categories.map((cat) => (
               <option key={cat.id} value={cat.id}>{cat.tourCategoryName}</option>
             ))}
-          </FilterSelect>
-
-          <FilterSelect 
-            value={filters.discount}
-            onChange={(e) => handleFilterChange('discount', e.target.value)}
-          >
-            <option value="">Giảm giá</option>
-            <option value="10">Giảm 10%</option>
-            <option value="20">Giảm 20%</option>
-            <option value="30">Giảm 30%</option>
-            <option value="50">Giảm 50%</option>
           </FilterSelect>
 
           <FilterSelect 
