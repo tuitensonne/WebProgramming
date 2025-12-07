@@ -15,6 +15,13 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import AboutUsPage from "./pages/AboutUsPage";
 import { FaqPage } from "./pages/FaqPage";
+import ProfilePage from "./pages/ProfilePage";
+import DomesticToursPage from "./pages/DomesticToursPage";
+import InternationalToursPage from "./pages/InternationalToursPage";
+import TourTypesPage from "./pages/TourTypesPage";
+import SchedulePage from "./pages/SchedulePage";
+import GuidePage from "./pages/GuidePage";
+import TourDetailPage from "./pages/TourDetailPage";
 
 import PrivateRoute from "../guards/PrivateRoute";
 import PublicRoute from "../guards/PublicRoute";
@@ -79,6 +86,71 @@ function App() {
               <PublicRoute restricted={true}>
                 <SignupPage />
               </PublicRoute>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <MainLayout>
+                  <ProfilePage />
+                </MainLayout>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/domestic"
+            element={
+              <MainLayout>
+                <DomesticToursPage />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/international"
+            element={
+              <MainLayout>
+                <InternationalToursPage />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/tour-types"
+            element={
+              <MainLayout>
+                <TourTypesPage />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/schedule"
+            element={
+              <MainLayout>
+                <SchedulePage />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/guide"
+            element={
+              <MainLayout>
+                <GuidePage />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/tour/:id"
+            element={
+              <MainLayout>
+                <TourDetailPage />
+              </MainLayout>
             }
           />
 
