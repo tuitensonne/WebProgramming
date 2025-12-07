@@ -12,6 +12,7 @@ import { styled } from "@mui/system";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import { useEffect, useState } from "react";
 import api from "../../api/api";
+import { useNavigate } from "react-router-dom";
 import { Instagram } from "@mui/icons-material";
 
 const FooterWrapper = styled(Box)(({ theme }) => ({
@@ -40,7 +41,7 @@ const NewsletterInput = styled(TextField)({
 export default function Footer({ data }) {
   const [footerData, setFooterData] = useState(data || null);
   const [loading, setLoading] = useState(!data);
-
+  const navigate = useNavigate();
   useEffect(() => {
     if (data) {
       setFooterData(data);
@@ -276,41 +277,55 @@ export default function Footer({ data }) {
                 textAlign: { xs: "center", md: "left" },
               }}
             >
-              Join Our Newsletter
+              Liên hệ với chúng tôi
             </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                mb: 1,
-                flexDirection: { xs: "column", sm: "row" },
-                gap: { xs: 1, sm: 0 },
+            <a
+              href="/contact"
+              style={{
+                textDecoration: "none",
+                width: "100%",
               }}
             >
-              <NewsletterInput
-                fullWidth
-                placeholder="Your email address"
-                variant="outlined"
-                size="medium"
+              <Box
                 sx={{
-                  "& .MuiInputBase-root": {
-                    borderRadius: { xs: "8px", sm: "8px 0 0 8px" },
-                  },
-                }}
-              />
-              <Button
-                variant="contained"
-                sx={{
-                  borderRadius: { xs: "8px", sm: "0 8px 8px 0" },
-                  backgroundColor: "#E4714E",
-                  fontWeight: 600,
-                  px: 3,
-                  fontSize: "16px",
-                  "&:hover": { backgroundColor: "#d65f3c" },
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                  gap: 1,
+                  mb: 1,
+                  width: "100%",
+                  cursor: "pointer",
                 }}
               >
-                Subscribe
-              </Button>
-            </Box>
+                <NewsletterInput
+                  fullWidth
+                  placeholder="Địa chỉ email của bạn"
+                  variant="outlined"
+                  size="medium"
+                  sx={{
+                    "& .MuiInputBase-root": {
+                      borderRadius: { xs: "8px", sm: "8px 0 0 8px" },
+                    },
+                    pointerEvents: "none", // để click vào input vẫn redirect
+                  }}
+                />
+
+                <Button
+                  variant="contained"
+                  sx={{
+                    borderRadius: { xs: "8px", sm: "0 8px 8px 0" },
+                    backgroundColor: "#E4714E",
+                    fontWeight: 600,
+                    px: 3,
+                    fontSize: "16px",
+                    "&:hover": { backgroundColor: "#d65f3c" },
+                    pointerEvents: "none", // để click vào khu vực nút vẫn redirect
+                  }}
+                >
+                  Gửi
+                </Button>
+              </Box>
+            </a>
+
             <Typography
               variant="body2"
               sx={{
@@ -319,7 +334,7 @@ export default function Footer({ data }) {
                 textAlign: { xs: "center", md: "left" },
               }}
             >
-              * Will send you weekly updates for your better tour packages.
+              * Chúng tôi sẽ phản hồi lại bạn qua email đăng ký
             </Typography>
           </Grid>
         </Grid>
@@ -331,14 +346,6 @@ export default function Footer({ data }) {
             mb: 3,
           }}
         />
-
-        <Typography
-          variant="body2"
-          align="center"
-          sx={{ color: "#ccc", fontSize: { xs: "0.85rem", md: "1rem" } }}
-        >
-          Copyright © Xpro 2022. All Rights Reserved.
-        </Typography>
       </Container>
     </FooterWrapper>
   );

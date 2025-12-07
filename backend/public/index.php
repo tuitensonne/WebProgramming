@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // ======= END CORS CONFIG =======
 
 require_once dirname(__DIR__) . '/app/Core/Autoloader.php';
+require __DIR__ . '/../vendor/autoload.php';
 require_once dirname(__DIR__) . '/app/config/env.php';
 loadEnv(dirname(__DIR__) . '/.env');
 require_once dirname(__DIR__) . '/app/Core/Router.php';
@@ -20,6 +21,12 @@ use App\Controllers\BannerController;
 use App\Controllers\SectionController;
 use App\Controllers\FooterController;
 use App\Controllers\TourController;
+use App\Controllers\ContactController;
+use App\Controllers\AdminUserController;
+use App\Controllers\CommentController;
+use App\Controllers\FaqController;
+use App\Controllers\AuthController;
+
 use App\Controllers\PostController;
 use App\Controllers\PostCommentController;
 $router = new Router();
@@ -43,22 +50,66 @@ $router->put('/footers/{id}/places', [FooterController::class, 'updatePlaces']);
 /**
  * Section routes
  */
-// $router->get('/sections', [SectionController::class, 'index']);                  
-// $router->get('/sections/{id}', [SectionController::class, 'show']);              
-$router->post('/sections', [SectionController::class, 'create']);         
+// $router->get('/sections', [SectionController::class, 'index']);            
+// $router->get('/sections/{id}', [SectionController::class, 'show']);      
+$router->post('/sections', [SectionController::class, 'create']);           
+$router->put('/sections/{id}', [SectionController::class, 'update']);         
 $router->delete('/sections/{id}', [SectionController::class, 'delete']);         
 $router->get('/pages/{pageId}/sections', [SectionController::class, 'getByPage']); 
 $router->put('/sections/reorder', [SectionController::class, 'reorder'] );
 /**
  * Comment routes
  */
-$router->post('/comments', [CommentController::class, 'create']);
-// ======= END ROUTES =======
+$router->get('/comments', [CommentController::class, 'getAllComments']);
 
 /**
  * Tour routes
  */
 $router->get('/tours/top', [TourController::class, 'getTopToursByCategory']);
+$router->get('/tours/categories', [TourController::class, 'getAllTourCategory']);
+
+/**
+ * Contact routes
+ */
+$router->get('/contacts', [ContactController::class, 'getAllContacts']);
+$router->delete('/contacts/{id}', [ContactController::class, 'delete']);
+$router->put('/contacts/{id}/status', [ContactController::class, 'updateStatus']);
+$router->post('/contacts/{id}/replyMail', [ContactController::class, 'replyMail']);
+$router->post('/contacts', [ContactController::class, 'create']);
+
+/**
+ * Auth routes
+ */
+$router->post('/auth/signup', [AuthController::class, 'signup']);
+$router->post('/auth/login', [AuthController::class, 'login']);
+
+
+/**
+ * Admin User Management routes (Yêu cầu quyền 'admin')
+ */
+$router->get('/admin/users', [AdminUserController::class, 'index']);
+$router->put('/admin/users/{id}', [AdminUserController::class, 'updateUserInfo']);
+$router->put('/admin/users/{id}/status', [AdminUserController::class, 'toggleStatus']);
+$router->put('/admin/users/{id}/reset-password', [AdminUserController::class, 'resetPassword']);
+
+/**
+ * FAQ Routes (Công khai)
+ */
+$router->get('/faqs', [FaqController::class, 'getFaqs']);
+$router->get('/faqs/categories', [FaqController::class, 'getFaqCategories']);
+
+
+/**
+ * FAQ Admin Routes (Yêu cầu quyền 'admin')
+ */
+$router->post('/admin/faq', [FaqController::class, 'createFaq']);
+$router->put('/admin/faq/{id}', [FaqController::class, 'updateFaq']);
+$router->delete('/admin/faq/{id}', [FaqController::class, 'deleteFaq']);
+
+$router->post('/admin/faq/categories', [FaqController::class, 'createFaqCategory']);
+$router->put('/admin/faq/categories/{id}', [FaqController::class, 'updateFaqCategory']);
+$router->delete('/admin/faq/categories/{id}', [FaqController::class, 'deleteFaqCategory']);
+// ======= END ROUTES =======
 $router->get('/tours', [TourController::class, 'getAllTours']);
 
 /**

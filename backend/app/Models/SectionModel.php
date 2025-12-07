@@ -17,23 +17,191 @@ class SectionModel
     public function create(array $data): ?int
     {
         try {
+            $this->db->beginTransaction();
+
+            $orderStmt = $this->db->prepare("
+                SELECT IFNULL(MAX(`order`), 0) AS max_order
+                FROM Section
+                WHERE page_id = :page_id
+            ");
+            $orderStmt->execute([':page_id' => $data['page_id']]);
+            $maxOrder = (int)$orderStmt->fetchColumn();
+            $nextOrder = $maxOrder + 1;
+
             $stmt = $this->db->prepare("
-                INSERT INTO Section (page_id, name, description)
-                VALUES (:page_id, :name, :description)
+                INSERT INTO Section 
+                    (page_id, type, title, subtitle, description, background_color, image_url, `order`, category_id)
+                VALUES 
+                    (:page_id, :type, :title, :subtitle, :description, :background_color, :image_url, :order, :category_id)
             ");
 
             $stmt->execute([
-                ':page_id' => $data['page_id'] ?? null,
-                ':name' => $data['name'] ?? null,
-                ':description' => $data['description'] ?? null,
+                ':page_id'          => $data['page_id'],
+                ':type'             => $data['type'] ?? null,
+                ':title'            => $data['title'] ?? null,
+                ':subtitle'         => $data['subtitle'] ?? null,
+                ':description'      => $data['description'] ?? null,
+                ':background_color' => $data['background_color'] ?? null,
+                ':image_url'        => $data['image_url'] ?? null,
+                ':order'            => $nextOrder,
+                ':category_id'      => $data['category_id'] ?? null,
             ]);
 
-            return (int)$this->db->lastInsertId();
+            $sectionId = (int)$this->db->lastInsertId();
+
+            if (!empty($data['items']) && is_array($data['items'])) {
+                $itemStmt = $this->db->prepare("
+                    INSERT INTO Item 
+                        (section_id, icon, title, subtitle, imageUrl, `desc`, buttonText, buttonPageId, color)
+                    VALUES 
+                        (:section_id, :icon, :title, :subtitle, :imageUrl, :desc, :buttonText, :buttonPageId, :color)
+                ");
+
+                foreach ($data['items'] as $item) {
+                    $itemStmt->execute([
+                        ':section_id'   => $sectionId,
+                        ':icon'         => $item['icon'] ?? null,
+                        ':title'        => $item['title'] ?? null,
+                        ':subtitle'     => $item['subtitle'] ?? null,
+                        ':imageUrl'     => $item['imageUrl'] ?? null,
+                        ':desc'         => $item['desc'] ?? null,
+                        ':buttonText'   => $item['buttonText'] ?? null,
+                        ':buttonPageId' => $item['buttonPageId'] ?? null,
+                        ':color'        => $item['color'] ?? null,
+                    ]);
+                }
+            }
+
+            $this->db->commit();
+
+            return $sectionId;
+
         } catch (PDOException $e) {
-            error_log('SectionModel::create error: ' . $e->getMessage());
+            $this->db->rollBack();
+            error_log("SectionModel::create TRANSACTION FAILED: " . $e->getMessage());
             return null;
         }
     }
+
+    public function update(int $id, array $data): bool
+{
+    try {
+        $this->db->beginTransaction();
+
+        // ==== 1. UPDATE SECTION ====
+        $stmt = $this->db->prepare("
+            UPDATE Section
+            SET 
+                page_id = :page_id,
+                type = :type,
+                title = :title,
+                subtitle = :subtitle,
+                description = :description,
+                background_color = :background_color,
+                image_url = :image_url,
+                category_id = :category_id
+            WHERE id = :id
+        ");
+
+        $stmt->execute([
+            ':id'               => $id,
+            ':page_id'          => $data['page_id'],
+            ':type'             => $data['type'] ?? null,
+            ':title'            => $data['title'] ?? null,
+            ':subtitle'         => $data['subtitle'] ?? null,
+            ':description'      => $data['description'] ?? null,
+            ':background_color' => $data['background_color'] ?? null,
+            ':image_url'        => $data['image_url'] ?? null,
+            ':category_id'      => $data['category_id'] ?? null,
+        ]);
+
+        // ==== 2. UPDATE ITEMS ====
+        if (!empty($data['items']) && is_array($data['items'])) {
+
+            // Lấy list item_id được gửi từ FE
+            $incomingIds = array_filter(array_column($data['items'], 'id'));
+
+            // Xoá item nào không nằm trong danh sách gửi lên
+            if (!empty($incomingIds)) {
+                $deleteStmt = $this->db->prepare("
+                    DELETE FROM Item 
+                    WHERE section_id = :section_id 
+                    AND id NOT IN (" . implode(",", array_map('intval', $incomingIds)) . ")
+                ");
+                $deleteStmt->execute([':section_id' => $id]);
+            } else {
+                // Nếu FE không gửi id item nào → xoá hết
+                $deleteAll = $this->db->prepare("
+                    DELETE FROM Item WHERE section_id = :section_id
+                ");
+                $deleteAll->execute([':section_id' => $id]);
+            }
+
+            // Insert hoặc update từng item
+            foreach ($data['items'] as $item) {
+                if (!empty($item['id'])) {
+                    // --- UPDATE ITEM ---
+                    $itemUpdate = $this->db->prepare("
+                        UPDATE Item
+                        SET 
+                            icon = :icon,
+                            title = :title,
+                            subtitle = :subtitle,
+                            imageUrl = :imageUrl,
+                            `desc` = :desc,
+                            buttonText = :buttonText,
+                            buttonPageId = :buttonPageId,
+                            color = :color
+                        WHERE id = :id AND section_id = :section_id
+                    ");
+
+                    $itemUpdate->execute([
+                        ':id'           => $item['id'],
+                        ':section_id'   => $id,
+                        ':icon'         => $item['icon'] ?? null,
+                        ':title'        => $item['title'] ?? null,
+                        ':subtitle'     => $item['subtitle'] ?? null,
+                        ':imageUrl'     => $item['imageUrl'] ?? null,
+                        ':desc'         => $item['desc'] ?? null,
+                        ':buttonText'   => $item['buttonText'] ?? null,
+                        ':buttonPageId' => $item['buttonPageId'] ?? null,
+                        ':color'        => $item['color'] ?? null,
+                    ]);
+
+                } else {
+                    // --- INSERT ITEM MỚI ---
+                    $itemInsert = $this->db->prepare("
+                        INSERT INTO Item 
+                            (section_id, icon, title, subtitle, imageUrl, `desc`, buttonText, buttonPageId, color)
+                        VALUES 
+                            (:section_id, :icon, :title, :subtitle, :imageUrl, :desc, :buttonText, :buttonPageId, :color)
+                    ");
+
+                    $itemInsert->execute([
+                        ':section_id'   => $id,
+                        ':icon'         => $item['icon'] ?? null,
+                        ':title'        => $item['title'] ?? null,
+                        ':subtitle'     => $item['subtitle'] ?? null,
+                        ':imageUrl'     => $item['imageUrl'] ?? null,
+                        ':desc'         => $item['desc'] ?? null,
+                        ':buttonText'   => $item['buttonText'] ?? null,
+                        ':buttonPageId' => $item['buttonPageId'] ?? null,
+                        ':color'        => $item['color'] ?? null,
+                    ]);
+                }
+            }
+        }
+
+        $this->db->commit();
+        return true;
+
+    } catch (PDOException $e) {
+        $this->db->rollBack();
+        error_log("SectionModel::update TRANSACTION FAILED: " . $e->getMessage());
+        return false;
+    }
+}
+
 
     public function getAll(): array
     {
@@ -135,7 +303,6 @@ class SectionModel
 
         return array_values($sections);
     }
-
 
     public function updateOrderBatch(array $sections): bool
     {

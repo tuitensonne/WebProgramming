@@ -1,14 +1,18 @@
-import React, { useState, createContext } from "react";
-// import Header from "../components/Header";
+import React, { useState, createContext, useMemo, useCallback } from "react";
+import { Outlet } from "react-router-dom";
 import AlertNotification from "../components/Alert";
 import ConfirmModal from "../components/ConfirmModal";
-import { Outlet } from "react-router-dom";
-import Header
- from "../components/Header";
+import Header from "../components/Header";
+
 export const UIContext = createContext();
 
 export default function AdminLayout() {
-  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
   const [confirm, setConfirm] = useState({
     show: false,
     title: "",
@@ -16,37 +20,45 @@ export default function AdminLayout() {
     onConfirm: null,
   });
 
-  const showToast = (message, type = "success") => {
+  const showToast = useCallback((message, type = "success") => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: "", type }), 3500);
-  };
+  }, []);
 
-  const showConfirm = (message, onConfirm, title = "Xác nhận hành động") => {
-    setConfirm({ show: true, title, message, onConfirm });
-  };
+  const showConfirm = useCallback(
+    (message, onConfirm, title = "Xác nhận hành động") => {
+      setConfirm({ show: true, title, message, onConfirm });
+    },
+    []
+  );
 
   const handleConfirm = () => {
-    const fn = confirm.onConfirm;
-    setConfirm({ show: false, title: "", message: "", onConfirm: null });
-    if (fn) fn();
-  };
-
-
-  const handleCancel = () => {
+    if (confirm.onConfirm) confirm.onConfirm();
     setConfirm({ show: false, title: "", message: "", onConfirm: null });
   };
+
+  const handleCancel = () =>
+    setConfirm({ show: false, title: "", message: "", onConfirm: null });
+
+  const contextValue = useMemo(
+    () => ({ showToast, showConfirm }),
+    [showToast, showConfirm]
+  );
 
   return (
-    <UIContext.Provider value={{ showToast, showConfirm }}>
-      <div className="page">
+    <UIContext.Provider value={contextValue}>
+      <div className="page d-flex">
         <Header />
-        <div className="page-wrapper">
-          <div className="page-body container-xl mt-3">
-            <Outlet />
+        <div className="page-wrapper flex-grow-1">
+          <div className="page-body">
+            <div className="container-xl">
+              <Outlet />
+            </div>
           </div>
         </div>
 
         <AlertNotification {...toast} />
+
         <ConfirmModal
           show={confirm.show}
           title={confirm.title}
