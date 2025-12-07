@@ -44,6 +44,7 @@ class FilterModel
                 FROM Place p
                 INNER JOIN TourDestination td ON p.id = td.placeId
                 INNER JOIN Tour t ON td.tourId = t.id
+                LEFT JOIN TourCategoryRel tcr ON t.id = tcr.tourId
             ";
 
             if ($tourType) {
@@ -51,7 +52,7 @@ class FilterModel
             }
             
             if ($categoryId) {
-                $whereConditions[] = "t.categoryId = :categoryId";
+                $whereConditions[] = "tcr.categoryId = :categoryId";
             }
             
             if (!empty($whereConditions)) {
@@ -154,9 +155,9 @@ class FilterModel
             $query = "
                 SELECT DISTINCT tc.id, tc.tourCategoryName
                 FROM TourCategory tc
-                INNER JOIN Tour t ON tc.id = t.categoryId
-                WHERE tc.id IN (7, 8, 9, 10)
-                ORDER BY tc.id DESC
+                INNER JOIN TourCategoryRel tcr ON tc.id = tcr.categoryId
+                WHERE tc.id IN (3, 4, 5, 6)
+                ORDER BY tc.id ASC
             ";
 
             $stmt = $this->db->prepare($query);
