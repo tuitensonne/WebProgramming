@@ -26,6 +26,8 @@ import {
   Settings as SettingsIcon,
   Logout as LogoutIcon,
 } from "@mui/icons-material";
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
 
 import { styled, alpha, useTheme } from "@mui/material/styles";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -90,17 +92,17 @@ const Header = () => {
           console.log(res.data.data.logo_url);
           setLogoUrl(res.data.data.logo_url);
         } else {
-          console.error("Failed to fetch sections:", res.data);
+          console.error("Lỗi lấy logo", res.data);
         }
       } catch (error) {
-        console.error("Error fetching sections:", error);
+        console.error("Lỗi lấy logo", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchLogo();
-  });
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -273,16 +275,22 @@ const Header = () => {
                 flex: isMobile ? 1 : "none",
                 display: "flex",
                 justifyContent: isMobile ? "center" : "flex-start",
+                alignItems: "center",
+                height: isFixed ? 32 : 40,
               }}
             >
-              <Logo
-                src={logoUrl}
-                alt="Viatours"
-                onClick={() => navigate("/")}
-                style={{
-                  height: isFixed ? 32 : 40,
-                }}
-              />
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : (
+                <Logo
+                  src={logoUrl}
+                  alt="Viatours"
+                  onClick={() => navigate("/")}
+                  style={{
+                    height: isFixed ? 32 : 40,
+                  }}
+                />
+              )}
             </Box>
 
             {!isTablet && (
@@ -419,8 +427,7 @@ const Header = () => {
                 {menuItems.map((item) => (
                   <NavButton
                     key={item.label}
-                    endIcon={<KeyboardArrowDownIcon />}
-                    onClick={handleMenuOpen}
+                    onClick={() => navigate(item.path)}
                   >
                     {item.label}
                   </NavButton>
@@ -430,7 +437,6 @@ const Header = () => {
           )}
         </Container>
       </StyledAppBar>
-
       <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
         <Box
           sx={{
