@@ -9,14 +9,18 @@ import {
   Link,
   InputAdornment,
   IconButton,
+  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Alert,
   Zoom,
+  Snackbar,
   keyframes,
 } from "@mui/material";
+
+import api from "../../api/api";
+
 import {
   Visibility,
   VisibilityOff,
@@ -27,8 +31,8 @@ import {
 } from "@mui/icons-material";
 
 import signup from "../../assets/images/signup.png";
-
 import logo from "../../assets/images/logo.png";
+
 const slideFromRight = keyframes`
   from {
     transform: translateX(100%);
@@ -57,7 +61,7 @@ export default function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [openForgotPassword, setOpenForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
-    fullname: "",
+    fullName: "",
     email: "",
     phone: "",
     password: "",
@@ -66,12 +70,22 @@ export default function SignUpPage() {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [resetEmail, setResetEmail] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    // Clear error when user starts typing
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+
     if (touched[name]) {
       validateField(name, value);
     }
@@ -79,7 +93,10 @@ export default function SignUpPage() {
 
   const handleBlur = (e) => {
     const { name, value } = e.target;
-    setTouched({ ...touched, [name]: true });
+    setTouched({
+      ...touched,
+      [name]: true,
+    });
     validateField(name, value);
   };
 
@@ -108,6 +125,7 @@ export default function SignUpPage() {
 
   const validateForm = () => {
     const newErrors = {};
+
     Object.keys(formData).forEach((key) => {
       if (!formData[key].trim()) {
         newErrors[key] = `Trường này không được để trống`;
@@ -117,15 +135,18 @@ export default function SignUpPage() {
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Email không hợp lệ";
     }
+
     if (
       formData.phone &&
       !/^\d{10,}$/.test(formData.phone.replace(/[^\d]/g, ""))
     ) {
       newErrors.phone = "Số điện thoại không hợp lệ";
     }
+
     if (formData.password && formData.password.length < 6) {
       newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
     }
+
     if (
       formData.confirmPassword &&
       formData.confirmPassword !== formData.password
@@ -137,20 +158,58 @@ export default function SignUpPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const showSnackbar = (msg, severity = "success") => {
+    setSnackbar({ open: true, message: msg, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     setTouched({
-      fullname: true,
+      fullName: true,
       email: true,
       phone: true,
       password: true,
       confirmPassword: true,
     });
 
-    if (validateForm()) {
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-      // TODO: Call API here
+    if (!validateForm()) {
+      setErrorMessage("Vui lòng điền đầy đủ và chính xác thông tin!");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setErrorMessage("");
+
+      const { confirmPassword, ...signupData } = formData;
+
+      const res = await api.post("/auth/signup", signupData);
+
+      if (res.data?.success) {
+        showSnackbar("Tạo user thành công!", "success");
+        setFormData({
+          fullName: "",
+          email: "",
+          phone: "",
+          password: "",
+          confirmPassword: "",
+        });
+        setTimeout(() => {
+          navigate("/login");
+        }, 800);
+      } else {
+        showSnackbar("Gửi thất bại. Vui lòng thử lại!", "error");
+      }
+    } catch (error) {
+      console.error("Error sending contact:", error);
+      showSnackbar("Có lỗi xảy ra khi đăng ký!", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -251,14 +310,6 @@ export default function SignUpPage() {
             </Typography>
           </Box>
 
-          {showSuccess && (
-            <Zoom in={showSuccess}>
-              <Alert severity="success" sx={{ mb: 3 }}>
-                Đăng ký thành công!
-              </Alert>
-            </Zoom>
-          )}
-
           <Box component="form" onSubmit={handleSubmit}>
             <TextField
               fullWidth
@@ -267,13 +318,13 @@ export default function SignUpPage() {
                   Họ và tên <span style={{ color: "red" }}>*</span>
                 </span>
               }
-              name="fullname"
-              value={formData.fullname}
+              name="fullName"
+              value={formData.fullName}
               onChange={handleChange}
               onBlur={handleBlur}
               margin="normal"
-              error={touched.fullname && !!errors.fullname}
-              helperText={touched.fullname && errors.fullname}
+              error={touched.fullName && !!errors.fullName}
+              helperText={touched.fullName && errors.fullName}
               sx={{
                 ...textFieldStyle(0.4),
                 "& .MuiFormHelperText-root": { minHeight: "5px" },
@@ -443,51 +494,31 @@ export default function SignUpPage() {
                 ),
               }}
             />
-            <Box
-              sx={{
-                textAlign: "right",
-                mt: 1,
-                animation: `${fadeInUp} 0.5s ease-out 0.8s both`,
-              }}
-            >
-              <Link
-                component="button"
-                type="button"
-                variant="body2"
-                onClick={() => setOpenForgotPassword(true)}
-                sx={{
-                  cursor: "pointer",
-                  color: "#FF5F00",
-                  transition: "all 0.3s ease",
-                  "&:hover": { color: "#CC4A00" },
-                }}
-              >
-                Quên mật khẩu?
-              </Link>
-            </Box>
 
             <Button
               fullWidth
               variant="contained"
               size="large"
               type="submit"
+              disabled={loading}
               sx={{
-                mt: 3,
-                mb: 2,
+                bgcolor: "#ed782aff",
+                borderRadius: 1,
                 py: 1.5,
-                fontSize: "16px",
-                background: "linear-gradient(135deg, #FF8C42 0%, #FF5F00 100%)",
-                animation: `${fadeInUp} 0.5s ease-out 0.9s both`,
+                textTransform: "none",
+                fontSize: 16,
+                fontWeight: 500,
+                mb: 3,
+                animation: `${fadeInUp} 0.5s ease-out 0.8s both`,
                 transition: "all 0.3s ease",
                 "&:hover": {
-                  background:
-                    "linear-gradient(135deg, #E6762E 0%, #CC4A00 100%)",
+                  bgcolor: "#fbbb91ff",
                   transform: "translateY(-3px)",
-                  boxShadow: "0 10px 25px rgba(255, 95, 0, 0.4)",
+                  boxShadow: "0 10px 20px rgba(187, 131, 79, 0.3)",
                 },
               }}
             >
-              Đăng ký
+              {loading ? "Đang đăng ký..." : "Đăng ký"}
             </Button>
 
             <Box
@@ -570,6 +601,21 @@ export default function SignUpPage() {
           </Dialog>
         </Container>
       </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          variant="filled"
+          severity={snackbar.severity}
+          onClose={handleCloseSnackbar}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

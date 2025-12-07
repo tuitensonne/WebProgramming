@@ -25,6 +25,7 @@ use App\Controllers\ContactController;
 use App\Controllers\AdminUserController;
 use App\Controllers\CommentController;
 use App\Controllers\FaqController;
+use App\Controllers\AuthController;
 
 $router = new Router();
 
@@ -47,8 +48,8 @@ $router->put('/footers/{id}/places', [FooterController::class, 'updatePlaces']);
 /**
  * Section routes
  */
-// $router->get('/sections', [SectionController::class, 'index']);                  
-// $router->get('/sections/{id}', [SectionController::class, 'show']);              
+// $router->get('/sections', [SectionController::class, 'index']);            
+// $router->get('/sections/{id}', [SectionController::class, 'show']);      
 $router->post('/sections', [SectionController::class, 'create']);           
 $router->put('/sections/{id}', [SectionController::class, 'update']);         
 $router->delete('/sections/{id}', [SectionController::class, 'delete']);         

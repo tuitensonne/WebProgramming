@@ -10,6 +10,7 @@ import FacebookIcon from "@mui/icons-material/Facebook";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import { useEffect, useState } from "react";
 import api from "../../api/api";
+import login from "../../assets/images/login.png";
 
 export default function ContactPage() {
   const [companyContact, setCompanyContact] = useState(null);
@@ -142,7 +143,7 @@ export default function ContactPage() {
         >
           <Box
             component="img"
-            src={companyContact?.logo_url}
+            src={login}
             alt="city"
             sx={{ width: "100%", height: "100%", objectFit: "cover" }}
           />

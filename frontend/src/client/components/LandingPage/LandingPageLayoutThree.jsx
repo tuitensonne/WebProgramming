@@ -1,13 +1,6 @@
 // src/components/LandingPage/LandingPageLayoutThree.jsx
 import React from "react";
-import {
-  Box,
-  Grid,
-  Typography,
-  Button,
-  Card,
-  CardMedia,
-} from "@mui/material";
+import { Box, Grid, Typography, Button, Card, CardMedia } from "@mui/material";
 import { motion } from "framer-motion";
 
 const containerVariants = {
@@ -27,14 +20,7 @@ const itemVariants = {
 export const LandingPageLayoutThree = ({ data }) => {
   if (!data) return null;
 
-  const {
-    title,
-    subtitle,
-    description,
-    image_url,
-    background_color,
-    items = [],
-  } = data;
+  const { title, subtitle, description, image_url, background_color } = data;
 
   return (
     <Box
@@ -54,6 +40,28 @@ export const LandingPageLayoutThree = ({ data }) => {
         gap: 6,
       }}
     >
+      <Box
+        sx={{
+          flex: 1,
+          position: "relative",
+          display: { xs: "none", md: "flex" },
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <motion.img
+          src={image_url}
+          alt={title}
+          variants={itemVariants}
+          style={{
+            width: "100%",
+            maxWidth: 500,
+            objectFit: "cover",
+            borderRadius: "20px",
+          }}
+        />
+      </Box>
+
       <Box sx={{ flex: 1 }}>
         {subtitle && (
           <Typography
@@ -106,86 +114,9 @@ export const LandingPageLayoutThree = ({ data }) => {
               boxShadow: "0 4px 14px rgba(240,85,85,0.3)",
             }}
           >
-            View Packages
+            Khám phá ngay
           </Button>
         </motion.div>
-
-        <Grid
-          container
-          spacing={2}
-          sx={{ mt: 6 }}
-          component={motion.div}
-          variants={containerVariants}
-        >
-          {items.map((item) => (
-            <Grid
-              item
-              xs={6}
-              sm={3}
-              key={item.id}
-              component={motion.div}
-              variants={itemVariants}
-            >
-              <Card
-                whileHover={{ scale: 1.05 }}
-                sx={{
-                  borderRadius: 3,
-                  boxShadow: 3,
-                  overflow: "hidden",
-                  position: "relative",
-                }}
-                component={motion.div}
-              >
-                <CardMedia
-                  component="img"
-                  height="160"
-                  image={item.imageUrl}
-                  alt={item.title}
-                />
-                {item.buttonText && (
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      backgroundColor: "#F05555",
-                      color: "#fff",
-                      borderRadius: "16px",
-                      px: 1.5,
-                      py: 0.5,
-                      fontSize: "0.85rem",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {item.buttonText}
-                  </Box>
-                )}
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
-
-      <Box
-        sx={{
-          flex: 1,
-          position: "relative",
-          display: { xs: "none", md: "flex" },
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <motion.img
-          src={image_url}
-          alt={title}
-          variants={itemVariants}
-          style={{
-            width: "100%",
-            maxWidth: 500,
-            objectFit: "cover",
-            borderRadius: "20px",
-          }}
-        />
       </Box>
     </Box>
   );

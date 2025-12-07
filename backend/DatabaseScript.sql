@@ -56,6 +56,9 @@ CREATE TABLE Tour (
     thumbnailUrl VARCHAR(255),
     tourType VARCHAR(100),
     categoryId INT,
+    durationDays INT,
+    durationNights INT,
+    availableSeat INT,
     FOREIGN KEY (postId) REFERENCES Post(id),
     FOREIGN KEY (categoryId) REFERENCES TourCategory(id)
 );
@@ -63,11 +66,8 @@ CREATE TABLE Tour (
 -- Bảng TourItinerary
 CREATE TABLE TourItinerary (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    availableSeat INT,
     departureDate DATE,
     price DECIMAL(10,2),
-    durationDays INT,
-    durationNights INT,
     tourId INT,
     FOREIGN KEY (tourId) REFERENCES Tour(id)
 );
@@ -136,7 +136,7 @@ CREATE TABLE Section (
     image_url VARCHAR(255),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (page_id) REFERENCES Page(id) ON DELETE CASCADE
+    FOREIGN KEY (page_id) REFERENCES Page(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES TourCategory(id) ON DELETE SET NULL
 );
 
@@ -222,6 +222,13 @@ VALUES
 (3, NULL, 'Enjoy 5-Star Comfort', NULL, '/assets/hotel1.jpg', 'Explore Now', NULL),
 (3, NULL, 'Discover The Wild', NULL, '/assets/hotel2.jpg', 'Book Trip', NULL);
 
+INSERT INTO Item (section_id, icon, title, `desc`, imageUrl, buttonText, color)
+VALUES
+(3, '📍', 'Chọn điểm đến', 'Tìm tour theo khu vực, chủ đề hoặc nhu cầu trải nghiệm.', NULL, NULL, '#FFB800'),
+(3, '📅', 'Chọn ngày khởi hành', 'Xem lịch khởi hành và giá tour theo thời gian thực.', NULL, NULL, '#FF6B4A'),
+(3, '🚗', 'Đặt tour & lên đường', 'Thanh toán nhanh chóng, xác nhận tức thì và sẵn sàng khám phá.', NULL, NULL, '#1B7B8F');
+
+
 INSERT INTO Section (
   page_id, type, `order`,
   title, subtitle, description,
@@ -270,3 +277,118 @@ VALUES
 
 ('Đặng Minh O', 'Thông tin xe đưa đón', 'minho@example.com', '0901223344', 'Xe đưa đón sẽ liên hệ trước bao lâu?', NOW(), NULL, NULL, NULL, 'read', 'unreplied');
 
+INSERT INTO CompanyInfo (
+    company_name, slogan, logo_url, address,
+    email, hotline, facebook_link, instagram_link
+)
+VALUES (
+    'TravelIn',
+    'Đi đây đi đó',
+    'lkdsjfldskjdslkfjdsfl',
+    'LTK, jskdjfkldjslkfj',
+    'travelin@gmail.com',
+    '07895390834',
+    'https://www.facebook.com',
+    'https://www.instagram.com'
+);
+
+INSERT INTO Place (city, province, country, companyInfoId)
+VALUES
+('Đà Lạt', 'Lâm Đồng', 'Việt Nam', 1),
+('Hội An', 'Quảng Nam', 'Việt Nam', 1),
+('Sa Pa', 'Lào Cai', 'Việt Nam', 1),
+('Bangkok', 'Bangkok', 'Thailand', 1),
+('Singapore', 'Singapore', 'Singapore', 1),
+('Seoul', 'Seoul', 'South Korea', 1);
+
+INSERT INTO Post (userId, title, content, type)
+VALUES
+(1, 'Khám phá Đà Lạt', 'Bài viết giới thiệu tour Đà Lạt 3N2Đ', 'tour'),
+(1, 'Hội An – Đà Nẵng 4N3Đ', 'Bài viết về tour phố cổ và biển', 'tour'),
+(1, 'Bangkok – Pattaya 5N4Đ', 'Giới thiệu tour Thái Lan', 'tour'),
+(1, 'Singapore 4N3Đ', 'Review quốc đảo sư tử', 'tour');
+
+
+INSERT INTO TourCategory (tourCategoryName, description)
+VALUES
+('Tour nội địa', 'Các chuyến đi trong nước'),
+('Tour quốc tế', 'Các chuyến đi nước ngoài'),
+('Tour nghỉ dưỡng', 'Resort, biển, thư giãn'),
+('Tour khám phá', 'Leo núi, trekking, adventure');
+
+INSERT INTO Media (url, type, postId)
+VALUES
+('media/dalat1.jpg', 'image', 5),
+('media/hoian1.jpg', 'image', 6),
+('media/thai1.jpg', 'image', 7),
+('media/singapore1.jpg', 'image', 8);
+
+
+
+INSERT INTO Booking (userId, tourId, totalCost, numberOfChild, numberOfAdult, status)
+VALUES
+-- User 1 đặt Tour Đà Lạt
+(1, 1, 3500000 * (2 + 1*0.7), 1, 2, 'PAID'),
+
+-- User 1 đặt Tour Singapore
+(1, 4, 12900000 * (2 + 0*0.7), 0, 2, 'PENDING'),
+
+-- User 2 đặt Tour Hội An – Đà Nẵng
+(2, 2, 4500000 * (1 + 1*0.7), 1, 1, 'PAID'),
+
+-- User 3 đặt Tour Thái Lan
+(2, 3, 8900000 * (2 + 0*0.7), 0, 2, 'CANCELLED');
+
+INSERT INTO TourCategory (tourCategoryName, description)
+VALUES
+('Tour nội địa', 'Các chuyến đi trong nước'),
+('Tour quốc tế', 'Các chuyến đi nước ngoài'),
+('Nghỉ dưỡng', 'Biển, resort, thư giãn'),
+('Khám phá', 'Trekking, adventure');
+
+INSERT INTO Tour (name, shortDescription, postId, thumbnailUrl, tourType, categoryId, durationDays, durationNights, availableSeat)
+VALUES
+('Đà Lạt 3N2Đ - Thành phố sương mù',
+ 'Khám phá thành phố hoa và khí hậu mát mẻ quanh năm.',
+ 5, 'thumb_dalat.jpg', 'Group', 1, 3, 2, 25),
+
+('Hội An – Đà Nẵng 4N3Đ',
+ 'Tham quan phố cổ, biển Mỹ Khê và chùa Linh Ứng.',
+ 6, 'thumb_hoian.jpg', 'Group', 1, 4, 3, 20),
+
+('Bangkok – Pattaya 5N4Đ',
+ 'Khám phá Thái Lan: chợ nổi, biển Pattaya, show nghệ thuật.',
+ 7, 'thumb_thailand.jpg', 'Group', 2, 5, 4, 30),
+
+('Singapore 4N3Đ',
+ 'Quốc đảo hiện đại, sạch đẹp, phù hợp gia đình và trẻ em.',
+ 8, 'thumb_singapore.jpg', 'Group', 2, 4, 3, 18);
+
+INSERT INTO TourItinerary (departureDate, price, tourId)
+VALUES
+('2025-01-15', 3500000, 9),
+('2025-02-10', 4500000, 10),
+('2025-03-05', 8900000, 11),
+('2025-04-01', 12900000, 12);
+
+INSERT INTO TourDestination (placeId, tourId, `order`)
+VALUES
+(1, 9, 1), -- Đà Lạt → Tour 1
+
+(2, 10, 2), -- Hội An
+(3, 11, 3), -- Đà Nẵng
+
+(4, 9, 4), -- Bangkok
+(5, 10, 5), -- Pattaya
+
+(6, 11, 6); -- Singapore
+
+INSERT INTO Item (section_id, icon, title, subtitle, imageUrl, `desc`, color)
+VALUES
+(2, 'TravelExplore', 'Nhiều lựa chọn tour', 'Tour đa dạng trong & ngoài nước', NULL, 'Hệ thống cung cấp hàng trăm tour chất lượng, cập nhật liên tục.', '#1976d2'),
+
+(2, 'Verified', 'Uy tín & minh bạch', 'Giá rõ ràng – không phí ẩn', NULL, 'Mọi thông tin tour được kiểm duyệt, minh bạch và đáng tin cậy.', '#2e7d32'),
+
+(2, 'SupportAgent', 'Hỗ trợ nhanh 24/7', 'Đồng hành suốt chuyến đi', NULL, 'Đội ngũ hỗ trợ luôn sẵn sàng giải đáp mọi thắc mắc.', '#ed6c02'),
+
+(2, 'ThumbUp', 'Trải nghiệm tối ưu', 'Được khách hàng tin chọn', NULL, 'Cam kết mang lại trải nghiệm du lịch tốt nhất với dịch vụ chuyên nghiệp.', '#9c27b0');
