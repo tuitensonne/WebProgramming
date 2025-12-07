@@ -19,10 +19,10 @@ import ProfilePage from "./pages/ProfilePage";
 import DomesticToursPage from "./pages/DomesticToursPage";
 import InternationalToursPage from "./pages/InternationalToursPage";
 import TourTypesPage from "./pages/TourTypesPage";
+import CategoryRedirect from "./pages/CategoryRedirect";
 import SchedulePage from "./pages/SchedulePage";
 import GuidePage from "./pages/GuidePage";
 import TourDetailPage from "./pages/TourDetailPage";
-
 import PrivateRoute from "../guards/PrivateRoute";
 import PublicRoute from "../guards/PublicRoute";
 
@@ -80,6 +80,7 @@ function App() {
               </PublicRoute>
             }
           />
+          
           <Route
             path="/register"
             element={
@@ -105,6 +106,15 @@ function App() {
             element={
               <MainLayout>
                 <DomesticToursPage />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/categories/:id"
+            element={
+              <MainLayout>
+                <CategoryRedirect />
               </MainLayout>
             }
           />

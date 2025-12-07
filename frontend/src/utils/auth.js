@@ -4,6 +4,8 @@ export const authUtils = {
     localStorage.setItem("token", token);
     localStorage.setItem("userRole", userRole);
     localStorage.setItem("userData", JSON.stringify(userData));
+    // Also save to "user" key for compatibility with ProfilePage
+    localStorage.setItem("user", JSON.stringify(userData));
   },
 
   // Lấy thông tin user
@@ -19,6 +21,7 @@ export const authUtils = {
     localStorage.removeItem("token");
     localStorage.removeItem("userRole");
     localStorage.removeItem("userData");
+    localStorage.removeItem("user"); // Also remove "user" key for compatibility
   },
 
   // Check có phải admin không

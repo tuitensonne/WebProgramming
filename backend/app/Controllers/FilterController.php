@@ -14,10 +14,18 @@ class FilterController extends Controller
 
     /**
      * Lấy tất cả filter options
+     * GET /filters?tourType={type}&categoryId={id}
      */
     public function getFilterOptions() {
         try {
-            $options = $this->filterModel->getAllFilterOptions();
+            $tourType = $_GET['tourType'] ?? null;
+            $categoryId = $_GET['categoryId'] ?? null;
+            
+            if ($categoryId && !is_numeric($categoryId)) {
+                $categoryId = null;
+            }
+            
+            $options = $this->filterModel->getAllFilterOptions($tourType, $categoryId ? (int)$categoryId : null);
 
             if (!$options) {
                 return $this->error('Failed to fetch filter options', 500);

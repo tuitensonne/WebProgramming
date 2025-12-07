@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from 'react-router-dom';
 import styled from "styled-components";
 import { 
   IconMapPin, 
@@ -132,32 +133,6 @@ const FilterSelect = styled.select`
   }
 `;
 
-const ViewPriceButton = styled.button`
-  padding: 12px 32px;
-  background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(0, 180, 219, 0.3);
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 180, 219, 0.4);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  @media (max-width: 640px) {
-    width: 100%;
-  }
-`;
 
 const Container = styled.div`
   max-width: 1400px;
@@ -296,11 +271,6 @@ const PriceValue = styled.div`
   color: #ff4757;
 `;
 
-const OldPrice = styled.div`
-  font-size: 14px;
-  color: #999;
-  text-decoration: line-through;
-`;
 
 const RatingRow = styled.div`
   display: flex;
@@ -347,10 +317,10 @@ const DomesticToursPage = () => {
   const [filters, setFilters] = useState({
     location: '',
     duration: '',
-    category: '',
     price: '',
     sortBy: ''
   });
+  const [searchParams] = useSearchParams();
 
   const [filterOptions, setFilterOptions] = useState({
     locations: [],
@@ -369,11 +339,6 @@ const DomesticToursPage = () => {
 
   const handleFilterChange = (field, value) => {
     setFilters({ ...filters, [field]: value });
-  };
-
-  const handleViewPrice = async () => {
-    setPage(1); // Reset to page 1 when applying filters
-    // The useEffect will handle the actual fetch with filters
   };
 
   const toggleLike = async (id) => {
@@ -417,21 +382,28 @@ const DomesticToursPage = () => {
   };
 
   useEffect(() => {
+    // Category filter removed - always use categoryId = 1 for domestic tours
+
     const fetchTours = async () => {
       setLoading(true);
       try {
         const offset = (page - 1) * pageSize;
-        const params = { limit: pageSize, offset, tourType: 'domestic' };
+        const params = { limit: pageSize, offset };
         
-        // Apply all filters
+        // Filter by categoryId: category 1 = domestic tours
+        // If category filter is provided, use it; otherwise use categoryId = 1 for domestic
+        if (filters.category) {
+          params.categoryId = filters.category;
+        } else {
+          params.categoryId = 1; // Category 1 = Tour nội địa
+        }
+        
+        // Apply other filters
         if (filters.location) {
           params.location = filters.location;
         }
         if (filters.duration) {
           params.duration = filters.duration;
-        }
-        if (filters.category) {
-          params.categoryId = filters.category;
         }
         if (filters.sortBy) {
           params.sortBy = filters.sortBy;
@@ -499,12 +471,13 @@ const DomesticToursPage = () => {
     };
 
     fetchTours();
-  }, [page, filters.sortBy, filters.location, filters.duration, filters.category]);
+  }, [page, filters.sortBy, filters.location, filters.duration]);
 
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
-        const res = await api.get('/filters');
+        // Fetch filter options with categoryId = 1 for domestic tours
+        const res = await api.get('/filters', { params: { categoryId: 1 } });
         const data = res.data?.data || {};
         setFilterOptions({
           locations: data.locations || [],
@@ -555,15 +528,6 @@ const DomesticToursPage = () => {
             ))}
           </FilterSelect>
 
-          <FilterSelect 
-            value={filters.category}
-            onChange={(e) => handleFilterChange('category', e.target.value)}
-          >
-            <option value="">Loại tour</option>
-            {filterOptions.categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.tourCategoryName}</option>
-            ))}
-          </FilterSelect>
 
           <FilterSelect 
             value={filters.price}
@@ -586,9 +550,6 @@ const DomesticToursPage = () => {
             <option value="rating">Đánh giá cao nhất</option>
           </FilterSelect>
 
-          <ViewPriceButton onClick={handleViewPrice}>
-            Xem giá
-          </ViewPriceButton>
         </FilterContainer>
       </FilterBar>
 
@@ -641,7 +602,6 @@ const DomesticToursPage = () => {
 
               <PriceRow>
                 <PriceValue>{tour.price !== null ? formatPrice(tour.price) : 'Đang cập nhật'}</PriceValue>
-                <OldPrice>{tour.oldPrice !== null ? formatPrice(tour.oldPrice) : ''}</OldPrice>
               </PriceRow>
 
               <RatingRow>

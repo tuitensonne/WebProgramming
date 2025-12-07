@@ -62,61 +62,72 @@ const ProfilePage = () => {
 
         // Get token from localStorage
         const token = localStorage.getItem("token");
-        const storedUser = localStorage.getItem("user");
-
-        // If we don't have a stored user but we have a token, try /users/profile
-        if (token && !storedUser) {
-          try {
-            const profileRes = await api.get('/users/profile', {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            const profile = profileRes.data?.data || profileRes.data;
-            if (profile) {
-                console.log('Fetched profile (token path):', profile);
-                setUserData(profile);
-              localStorage.setItem('user', JSON.stringify(profile));
-              return;
-            }
-          } catch (e) {
-            console.warn('Failed to fetch profile with token', e);
-          }
+        
+        if (!token) {
+          console.log("No token found in localStorage");
+          setLoading(false);
+          return;
         }
 
-        // If we have a stored user, try to refresh their full profile
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          const userId = user?.id;
-
-          if (userId && token) {
+        // Always fetch fresh data from API to ensure we have the latest user data
+        try {
+          // First try /users/profile endpoint (uses JWT token)
+          const profileRes = await api.get('/users/profile', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const profile = profileRes.data?.data || profileRes.data;
+          
+          if (profile) {
+            console.log('Fetched profile from API:', profile);
+            setUserData(profile);
+            // Update both localStorage keys for compatibility
+            localStorage.setItem('user', JSON.stringify(profile));
+            localStorage.setItem('userData', JSON.stringify(profile));
+            return;
+          }
+        } catch (e) {
+          console.warn('Failed to fetch profile from /users/profile, trying /users/{id}', e);
+          
+          // Fallback: try to get user ID from localStorage and fetch by ID
+          const storedUserData = localStorage.getItem("userData");
+          const storedUser = localStorage.getItem("user");
+          const userFromStorage = storedUserData ? JSON.parse(storedUserData) : 
+                                  storedUser ? JSON.parse(storedUser) : null;
+          
+          if (userFromStorage?.id) {
             try {
-              const res = await api.get(`/users/${userId}`, {
+              const res = await api.get(`/users/${userFromStorage.id}`, {
                 headers: { Authorization: `Bearer ${token}` }
               });
               const profile = res.data?.data || res.data;
               if (profile) {
-                console.log('Fetched profile (id path):', profile);
+                console.log('Fetched profile by ID:', profile);
                 setUserData(profile);
                 localStorage.setItem('user', JSON.stringify(profile));
+                localStorage.setItem('userData', JSON.stringify(profile));
                 return;
               }
-            } catch (e) {
-              console.warn('Failed to refresh user profile, falling back to stored user', e);
+            } catch (e2) {
+              console.warn('Failed to fetch profile by ID', e2);
             }
           }
-
-          // Fallback to stored user if fetch failed
-          setUserData(JSON.parse(storedUser));
-          return;
+          
+          // Last resort: use stored data if API calls fail
+          if (userFromStorage) {
+            console.warn('Using stored user data as fallback');
+            setUserData(userFromStorage);
+            return;
+          }
         }
-
-        // No token/user available
-        console.log("No token or user found in localStorage");
       } catch (error) {
         console.error("Error fetching user data:", error);
-        // Fallback to localStorage user data
+        // Final fallback to localStorage
+        const storedUserData = localStorage.getItem("userData");
         const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          setUserData(JSON.parse(storedUser));
+        const fallbackUser = storedUserData ? JSON.parse(storedUserData) : 
+                            storedUser ? JSON.parse(storedUser) : null;
+        if (fallbackUser) {
+          setUserData(fallbackUser);
         }
       } finally {
         setLoading(false);

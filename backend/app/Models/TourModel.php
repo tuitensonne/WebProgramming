@@ -66,15 +66,27 @@ class TourModel
             $stmt->execute();
             
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row && $row['city']) {
-                // Return "City, Country" or just "Country" if city is null
-                return $row['city'] . (!empty($row['province']) && $row['province'] !== $row['city'] ? ', ' . $row['province'] : '') . ' - ' . $row['country'];
+            if ($row) {
+                // Return "City, Province - Country" or just "Country" if city is null
+                if (!empty($row['city'])) {
+                    $result = $row['city'];
+                    if (!empty($row['province']) && $row['province'] !== $row['city']) {
+                        $result .= ', ' . $row['province'];
+                    }
+                    if (!empty($row['country'])) {
+                        $result .= ' - ' . $row['country'];
+                    }
+                    return $result;
+                } elseif (!empty($row['country'])) {
+                    // If no city, return country
+                    return $row['country'];
+                }
             }
             
-            return 'Việt Nam';
+            return null;
         } catch (PDOException $e) {
             error_log("Lỗi khi lấy địa chỉ tour: " . $e->getMessage());
-            return 'Việt Nam';
+            return null;
         }
     }
 
@@ -87,22 +99,24 @@ class TourModel
             $query = "
                 SELECT 
                     t.id,
-                    t.shortDescription AS name,
+                    t.name,
                     t.shortDescription,
                     t.thumbnailUrl,
                     t.tourType,
                     t.categoryId,
                     c.tourCategoryName AS categoryName,
+                    t.durationDays,
+                    t.durationNights,
+                    t.availableSeat,
                     ti.price AS originalPrice,
-                    ti.discount_price AS discountPrice,
                     CASE 
-                        WHEN ti.availableSeat IS NOT NULL 
-                        THEN CONCAT(ti.availableSeat, ' Người')
+                        WHEN t.availableSeat IS NOT NULL 
+                        THEN CONCAT(t.availableSeat, ' Người')
                         ELSE NULL
                     END AS guests,
                     CASE 
-                        WHEN ti.durationDays IS NOT NULL AND ti.durationNights IS NOT NULL 
-                        THEN CONCAT(ti.durationDays, ' Ngày ', ti.durationNights, ' Đêm')
+                        WHEN t.durationDays IS NOT NULL AND t.durationNights IS NOT NULL 
+                        THEN CONCAT(t.durationDays, ' Ngày ', t.durationNights, ' Đêm')
                         ELSE '3 Ngày 2 Đêm'
                     END AS duration,
                     CASE 
@@ -115,11 +129,7 @@ class TourModel
                 LEFT JOIN (
                     SELECT 
                         ti1.tourId, 
-                        ti1.price, 
-                        ti1.discount_price,
-                        ti1.availableSeat, 
-                        ti1.durationDays, 
-                        ti1.durationNights,
+                        ti1.price,
                         ti1.departureDate
                     FROM TourItinerary ti1
                     INNER JOIN (
@@ -140,16 +150,9 @@ class TourModel
             
             // Add fallback values for frontend compatibility
             foreach ($rows as &$row) {
-                // Compute display price and oldPrice: prefer discountPrice if present
-                $original = $row['originalPrice'] ?? null;
-                $discount = $row['discountPrice'] ?? null;
-                if ($discount !== null && $discount !== '') {
-                    $row['price'] = $discount;
-                    $row['oldPrice'] = $original;
-                } else {
-                    $row['price'] = $original ?? null;
-                    $row['oldPrice'] = null;
-                }
+                // Compute display price
+                $row['price'] = $row['originalPrice'] ?? null;
+                $row['oldPrice'] = null;
 
                 $row['location'] = $row['name'] ?? 'Tour du lịch';
                 $row['icon'] = $this->getIconByCategory($row['categoryId']);
@@ -157,7 +160,7 @@ class TourModel
                 $row['rating'] = $row['rating'] ?? 0;
                 $row['reviews'] = $row['reviews'] ?? 0;
                 $row['departure'] = $row['departureDate'] ?? 'Hàng Ngày';
-                   $row['address'] = $this->getAddressForTour($row['id']);
+                $row['address'] = $this->getAddressForTour($row['id']) ?? 'Chưa xác định';
                 $row['image'] = $row['image'] ?? ($row['thumbnailUrl'] ?? '');
                 $row['liked'] = false;
             }
@@ -181,23 +184,25 @@ class TourModel
             $query = "
                 SELECT 
                     t.id,
-                    t.shortDescription AS name,
+                    t.name,
                     t.shortDescription,
                     t.thumbnailUrl,
                     t.tourType,
                     t.categoryId,
                     c.tourCategoryName AS categoryName,
                     COUNT(b.tourId) AS totalBookings,
+                    t.durationDays,
+                    t.durationNights,
+                    t.availableSeat,
                     ti.price AS originalPrice,
-                    ti.discount_price AS discountPrice,
                     CASE 
-                        WHEN ti.availableSeat IS NOT NULL 
-                        THEN CONCAT(ti.availableSeat, ' Người')
+                        WHEN t.availableSeat IS NOT NULL 
+                        THEN CONCAT(t.availableSeat, ' Người')
                         ELSE NULL
                     END AS guests,
                     CASE 
-                        WHEN ti.durationDays IS NOT NULL AND ti.durationNights IS NOT NULL 
-                        THEN CONCAT(ti.durationDays, ' Ngày ', ti.durationNights, ' Đêm')
+                        WHEN t.durationDays IS NOT NULL AND t.durationNights IS NOT NULL 
+                        THEN CONCAT(t.durationDays, ' Ngày ', t.durationNights, ' Đêm')
                         ELSE '3 Ngày 2 Đêm'
                     END AS duration,
                     CASE 
@@ -210,7 +215,7 @@ class TourModel
                 LEFT JOIN Booking b ON t.id = b.tourId
                 LEFT JOIN (
                     SELECT 
-                        ti1.tourId, ti1.price, ti1.discount_price, ti1.availableSeat, ti1.durationDays, ti1.durationNights, ti1.departureDate
+                        ti1.tourId, ti1.price, ti1.departureDate
                     FROM TourItinerary ti1
                     INNER JOIN (
                         SELECT tourId, MIN(departureDate) as minDate
@@ -219,7 +224,7 @@ class TourModel
                     ) ti2 ON ti1.tourId = ti2.tourId AND ti1.departureDate = ti2.minDate
                 ) ti ON t.id = ti.tourId
                 WHERE t.categoryId = :categoryId
-                GROUP BY t.id
+                GROUP BY t.id, t.name, t.shortDescription, t.thumbnailUrl, t.tourType, t.categoryId, c.tourCategoryName, t.durationDays, t.durationNights, t.availableSeat
                 ORDER BY totalBookings DESC
                 LIMIT 4
             ";
@@ -232,16 +237,9 @@ class TourModel
             
             // Add fallback values for frontend compatibility
             foreach ($rows as &$row) {
-                // Compute display price and oldPrice: prefer discountPrice if present
-                $original = $row['originalPrice'] ?? null;
-                $discount = $row['discountPrice'] ?? null;
-                if ($discount !== null && $discount !== '' && $discount > 0) {
-                    $row['price'] = (float)$discount;
-                    $row['oldPrice'] = $original !== null && $original > 0 ? (float)$original : null;
-                } else {
-                    $row['price'] = $original !== null && $original > 0 ? (float)$original : null;
-                    $row['oldPrice'] = null;
-                }
+                // Compute display price
+                $row['price'] = $row['originalPrice'] !== null && $row['originalPrice'] > 0 ? (float)$row['originalPrice'] : null;
+                $row['oldPrice'] = null;
 
                 $row['location'] = $row['name'] ?? 'Tour du lịch';
                 $row['icon'] = $this->getIconByCategory($row['categoryId']);
@@ -259,10 +257,10 @@ class TourModel
                 }
                 // Address - use try-catch to prevent errors
                 try {
-                    $row['address'] = $this->getAddressForTour($row['id']);
+                    $row['address'] = $this->getAddressForTour($row['id']) ?? 'Chưa xác định';
                 } catch (\Exception $e) {
                     error_log("Error getting address for tour {$row['id']}: " . $e->getMessage());
-                    $row['address'] = 'Việt Nam';
+                    $row['address'] = 'Chưa xác định';
                 }
                 $row['image'] = $row['image'] ?? ($row['thumbnailUrl'] ?? '');
                 $row['liked'] = false;
@@ -294,25 +292,27 @@ class TourModel
             $query = "
                 SELECT 
                     t.id,
-                    t.shortDescription AS name,
+                    t.name,
                     t.shortDescription,
                     t.thumbnailUrl,
                     t.tourType,
                     t.categoryId,
                     c.tourCategoryName AS categoryName,
-                    COUNT(DISTINCT b.tourId) AS totalBookings,
+                    COUNT(DISTINCT b.userId) AS totalBookings,
+                    t.durationDays,
+                    t.durationNights,
+                    t.availableSeat,
                     MAX(ti.price) AS originalPrice,
-                    MAX(ti.discount_price) AS discountPrice,
-                    MAX(CASE 
-                        WHEN ti.availableSeat IS NOT NULL 
-                        THEN CONCAT(ti.availableSeat, ' Người')
+                    CASE 
+                        WHEN t.availableSeat IS NOT NULL 
+                        THEN CONCAT(t.availableSeat, ' Người')
                         ELSE NULL
-                    END) AS guests,
-                    MAX(CASE 
-                        WHEN ti.durationDays IS NOT NULL AND ti.durationNights IS NOT NULL 
-                        THEN CONCAT(ti.durationDays, ' Ngày ', ti.durationNights, ' Đêm')
+                    END AS guests,
+                    CASE 
+                        WHEN t.durationDays IS NOT NULL AND t.durationNights IS NOT NULL 
+                        THEN CONCAT(t.durationDays, ' Ngày ', t.durationNights, ' Đêm')
                         ELSE '3 Ngày 2 Đêm'
-                    END) AS duration,
+                    END AS duration,
                     MAX(CASE 
                         WHEN ti.departureDate IS NOT NULL 
                         THEN DATE_FORMAT(ti.departureDate, '%d/%m/%Y')
@@ -324,11 +324,7 @@ class TourModel
                 LEFT JOIN (
                     SELECT 
                         ti1.tourId, 
-                        ti1.price, 
-                        ti1.discount_price,
-                        ti1.availableSeat, 
-                        ti1.durationDays, 
-                        ti1.durationNights,
+                        ti1.price,
                         ti1.departureDate
                     FROM TourItinerary ti1
                     INNER JOIN (
@@ -348,26 +344,48 @@ class TourModel
                 $query .= " AND t.tourType = :tourType ";
             }
 
-            // Filter by location: search in shortDescription
+            // Filter by location: search in TourDestination -> Place
             if ($location) {
-                $query .= " AND t.shortDescription LIKE :location ";
+                $query .= " AND EXISTS (
+                    SELECT 1 
+                    FROM TourDestination td2
+                    INNER JOIN Place p2 ON td2.placeId = p2.id
+                    WHERE td2.tourId = t.id 
+                    AND CONCAT(p2.city, ' - ', p2.country) = :location
+                ) ";
             }
 
-            // Filter by duration: search in shortDescription
+            // Filter by duration: search in durationDays and durationNights
+            $durationDays = null;
+            $durationNights = null;
             if ($duration) {
-                $query .= " AND t.shortDescription LIKE :duration ";
+                // Parse duration format like "2 Ngày 1 Đêm" or "2N1"
+                if (preg_match('/(\d+)\s*Ngày\s*(\d+)\s*Đêm/i', $duration, $matches)) {
+                    $durationDays = (int)$matches[1];
+                    $durationNights = (int)$matches[2];
+                    $query .= " AND t.durationDays = :durationDays AND t.durationNights = :durationNights ";
+                } elseif (preg_match('/(\d+)N(\d+)/i', $duration, $matches)) {
+                    $durationDays = (int)$matches[1];
+                    $durationNights = (int)$matches[2];
+                    $query .= " AND t.durationDays = :durationDays AND t.durationNights = :durationNights ";
+                } else {
+                    // Handle "Trên 1 tuần" or similar
+                    if (stripos($duration, 'tuần') !== false || stripos($duration, 'week') !== false || stripos($duration, 'Trên 1 tuần') !== false) {
+                        $query .= " AND (t.durationDays >= 7 OR (t.durationDays IS NULL AND t.durationNights >= 6)) ";
+                    }
+                }
             }
 
-            $query .= " GROUP BY t.id";
+            $query .= " GROUP BY t.id, t.name, t.shortDescription, t.thumbnailUrl, t.tourType, t.categoryId, c.tourCategoryName, t.durationDays, t.durationNights, t.availableSeat";
 
             // Apply sorting - support price asc/desc and rating (fallback to bookings)
             switch ($sortBy) {
                 case 'price-asc':
-                    // Put tours with price (original or discount) first, then sort ascending by effective price
-                    $query .= " ORDER BY (MAX(ti.discount_price) IS NULL AND MAX(ti.price) IS NULL), COALESCE(MAX(ti.discount_price), MAX(ti.price)) ASC";
+                    // Put tours with price first, then sort ascending by price
+                    $query .= " ORDER BY (MAX(ti.price) IS NULL), MAX(ti.price) ASC";
                     break;
                 case 'price-desc':
-                    $query .= " ORDER BY (MAX(ti.discount_price) IS NULL AND MAX(ti.price) IS NULL), COALESCE(MAX(ti.discount_price), MAX(ti.price)) DESC";
+                    $query .= " ORDER BY (MAX(ti.price) IS NULL), MAX(ti.price) DESC";
                     break;
                 case 'rating':
                     // No rating column, fallback to bookings
@@ -375,7 +393,7 @@ class TourModel
                     break;
                 default:
                     // Default: prioritize tours with pricing (itinerary exists), then by totalBookings DESC
-                    $query .= " ORDER BY (MAX(ti.discount_price) IS NULL AND MAX(ti.price) IS NULL) ASC, totalBookings DESC, t.id DESC";
+                    $query .= " ORDER BY (MAX(ti.price) IS NULL) ASC, totalBookings DESC, t.id DESC";
                     break;
             }
 
@@ -391,16 +409,15 @@ class TourModel
                 $stmt->bindParam(':tourType', $tourType, PDO::PARAM_STR);
             }
 
-            // Bind location with wildcard for LIKE search
+            // Bind location (exact match)
             if ($location) {
-                $locationPattern = '%' . $location . '%';
-                $stmt->bindParam(':location', $locationPattern, PDO::PARAM_STR);
+                $stmt->bindParam(':location', $location, PDO::PARAM_STR);
             }
 
-            // Bind duration with wildcard for LIKE search
-            if ($duration) {
-                $durationPattern = '%' . $duration . '%';
-                $stmt->bindParam(':duration', $durationPattern, PDO::PARAM_STR);
+            // Bind duration parameters
+            if ($duration && $durationDays !== null && $durationNights !== null) {
+                $stmt->bindParam(':durationDays', $durationDays, PDO::PARAM_INT);
+                $stmt->bindParam(':durationNights', $durationNights, PDO::PARAM_INT);
             }
 
             $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
@@ -411,16 +428,9 @@ class TourModel
             
             // Add fallback values for frontend compatibility
             foreach ($rows as &$row) {
-                // Compute display price and oldPrice: prefer discountPrice if present
-                $original = $row['originalPrice'] ?? null;
-                $discount = $row['discountPrice'] ?? null;
-                if ($discount !== null && $discount !== '' && $discount > 0) {
-                    $row['price'] = (float)$discount;
-                    $row['oldPrice'] = $original !== null && $original > 0 ? (float)$original : null;
-                } else {
-                    $row['price'] = $original !== null && $original > 0 ? (float)$original : null;
-                    $row['oldPrice'] = null;
-                }
+                // Compute display price
+                $row['price'] = $row['originalPrice'] !== null && $row['originalPrice'] > 0 ? (float)$row['originalPrice'] : null;
+                $row['oldPrice'] = null;
 
                 $row['location'] = $row['name'] ?? 'Tour du lịch';
                 $row['icon'] = $this->getIconByCategory($row['categoryId']);
@@ -438,10 +448,10 @@ class TourModel
                 }
                 // Address - use try-catch to prevent errors
                 try {
-                    $row['address'] = $this->getAddressForTour($row['id']);
+                    $row['address'] = $this->getAddressForTour($row['id']) ?? 'Chưa xác định';
                 } catch (\Exception $e) {
                     error_log("Error getting address for tour {$row['id']}: " . $e->getMessage());
-                    $row['address'] = 'Việt Nam';
+                    $row['address'] = 'Chưa xác định';
                 }
                 $row['image'] = $row['image'] ?? ($row['thumbnailUrl'] ?? '');
                 $row['liked'] = false;
@@ -474,7 +484,7 @@ class TourModel
             $query = "
                 SELECT 
                     t.id,
-                    t.shortDescription AS name,
+                    t.name,
                     t.shortDescription,
                     t.postId,
                     t.thumbnailUrl,
@@ -482,16 +492,18 @@ class TourModel
                     t.categoryId,
                     c.tourCategoryName AS categoryName,
                         COUNT(b.tourId) AS totalBookings,
+                        t.durationDays,
+                        t.durationNights,
+                        t.availableSeat,
                         ti.price AS originalPrice,
-                        ti.discount_price AS discountPrice,
                         CASE 
-                        WHEN ti.availableSeat IS NOT NULL 
-                        THEN CONCAT(ti.availableSeat, ' Người')
+                        WHEN t.availableSeat IS NOT NULL 
+                        THEN CONCAT(t.availableSeat, ' Người')
                         ELSE NULL
                     END AS guests,
                     CASE 
-                        WHEN ti.durationDays IS NOT NULL AND ti.durationNights IS NOT NULL 
-                        THEN CONCAT(ti.durationDays, ' Ngày ', ti.durationNights, ' Đêm')
+                        WHEN t.durationDays IS NOT NULL AND t.durationNights IS NOT NULL 
+                        THEN CONCAT(t.durationDays, ' Ngày ', t.durationNights, ' Đêm')
                         ELSE '3 Ngày 2 Đêm'
                     END AS duration,
                     CASE 
@@ -504,7 +516,7 @@ class TourModel
                 LEFT JOIN Booking b ON t.id = b.tourId
                 LEFT JOIN (
                     SELECT 
-                        ti1.tourId, ti1.price, ti1.discount_price, ti1.availableSeat, ti1.durationDays, ti1.durationNights, ti1.departureDate
+                        ti1.tourId, ti1.price, ti1.departureDate
                     FROM TourItinerary ti1
                     INNER JOIN (
                         SELECT tourId, MIN(departureDate) as minDate
@@ -522,16 +534,9 @@ class TourModel
 
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($row) {
-                // Compute display price and oldPrice: prefer discountPrice if present
-                $original = $row['originalPrice'] ?? null;
-                $discount = $row['discountPrice'] ?? null;
-                if ($discount !== null && $discount !== '' && $discount > 0) {
-                    $row['price'] = (float)$discount;
-                    $row['oldPrice'] = $original !== null && $original > 0 ? (float)$original : null;
-                } else {
-                    $row['price'] = $original !== null && $original > 0 ? (float)$original : null;
-                    $row['oldPrice'] = null;
-                }
+                // Compute display price
+                $row['price'] = $row['originalPrice'] !== null && $row['originalPrice'] > 0 ? (float)$row['originalPrice'] : null;
+                $row['oldPrice'] = null;
 
                 // Add fallback values for frontend compatibility
                 $row['location'] = $row['name'] ?? 'Tour du lịch';
@@ -550,10 +555,10 @@ class TourModel
                 }
                 // Address - use try-catch to prevent errors
                 try {
-                    $row['address'] = $this->getAddressForTour($row['id']);
+                    $row['address'] = $this->getAddressForTour($row['id']) ?? 'Chưa xác định';
                 } catch (\Exception $e) {
                     error_log("Error getting address for tour {$row['id']}: " . $e->getMessage());
-                    $row['address'] = 'Việt Nam';
+                    $row['address'] = 'Chưa xác định';
                 }
                 $row['image'] = $row['image'] ?? ($row['thumbnailUrl'] ?? '');
                 $row['liked'] = false;

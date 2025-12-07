@@ -826,15 +826,13 @@ class UserController extends Controller
                         t.shortDescription AS name,
                         t.shortDescription,
                         t.thumbnailUrl,
-                        MAX(ti.price) AS originalPrice,
-                        MAX(ti.discount_price) AS discountPrice
+                        MAX(ti.price) AS originalPrice
                     FROM SavedTour st
                     INNER JOIN Tour t ON st.tourId = t.id
                     LEFT JOIN (
                         SELECT 
                             ti1.tourId, 
-                            ti1.price, 
-                            ti1.discount_price
+                            ti1.price
                         FROM TourItinerary ti1
                         INNER JOIN (
                             SELECT tourId, MIN(departureDate) as minDate
@@ -853,15 +851,8 @@ class UserController extends Controller
 
                 // Process tours to add price field
                 foreach ($savedTours as &$tour) {
-                    $original = $tour['originalPrice'] ?? null;
-                    $discount = $tour['discountPrice'] ?? null;
-                    if ($discount !== null && $discount !== '' && $discount > 0) {
-                        $tour['price'] = (float)$discount;
-                        $tour['oldPrice'] = $original !== null && $original > 0 ? (float)$original : null;
-                    } else {
-                        $tour['price'] = $original !== null && $original > 0 ? (float)$original : null;
-                        $tour['oldPrice'] = null;
-                    }
+                    $tour['price'] = $tour['originalPrice'] !== null && $tour['originalPrice'] > 0 ? (float)$tour['originalPrice'] : null;
+                    $tour['oldPrice'] = null;
                 }
 
                 return $this->success($savedTours, 'Saved tours retrieved successfully');

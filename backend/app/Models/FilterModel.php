@@ -29,31 +29,43 @@ class FilterModel
     }
 
     /**
-     * Lấy danh sách các địa điểm (từ tour names)
+     * Lấy danh sách các địa điểm từ TourDestination -> Place
      * @param string|null $tourType 'domestic' hoặc 'international', null để lấy cả hai
+     * @param int|null $categoryId ID của category để filter theo các tour trong page
      */
-    public function getLocations(?string $tourType = null): ?array
+    public function getLocations(?string $tourType = null, ?int $categoryId = null): ?array
     {
         try {
-                // Get locations from Place table via TourDestination
-                $whereClause = "";
-            if ($tourType) {
-                    $whereClause = "WHERE t.tourType = :tourType";
-            }
-            
+            // Get locations from Place table via TourDestination
+            $whereConditions = [];
             $query = "
                 SELECT DISTINCT 
-                        CONCAT(p.city, ' - ', p.country) AS location
-                    FROM Place p
-                    INNER JOIN TourDestination td ON p.id = td.placeId
-                    INNER JOIN Tour t ON td.tourId = t.id
-                $whereClause
-                    ORDER BY p.country, p.city
+                    CONCAT(p.city, ' - ', p.country) AS location
+                FROM Place p
+                INNER JOIN TourDestination td ON p.id = td.placeId
+                INNER JOIN Tour t ON td.tourId = t.id
             ";
+
+            if ($tourType) {
+                $whereConditions[] = "t.tourType = :tourType";
+            }
+            
+            if ($categoryId) {
+                $whereConditions[] = "t.categoryId = :categoryId";
+            }
+            
+            if (!empty($whereConditions)) {
+                $query .= " WHERE " . implode(" AND ", $whereConditions);
+            }
+            
+            $query .= " ORDER BY p.country, p.city";
 
             $stmt = $this->db->prepare($query);
             if ($tourType) {
                 $stmt->bindParam(':tourType', $tourType, PDO::PARAM_STR);
+            }
+            if ($categoryId) {
+                $stmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
             }
             $stmt->execute();
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -74,17 +86,21 @@ class FilterModel
     }
 
     /**
-     * Lấy danh sách thời gian (từ shortDescription - format NNDNgày)
+     * Lấy danh sách thời gian từ durationDays và durationNights
+     * Trả về các giá trị mặc định: 2 ngày 1 đêm, đến trên 1 tuần
      */
     public function getDurations(): ?array
     {
         try {
+            // Get distinct durations from Tour table
             $query = "
                 SELECT DISTINCT 
-                    REGEXP_SUBSTR(shortDescription, '[0-9]+N[0-9]+') AS duration
-                FROM Tour
-                WHERE shortDescription REGEXP '[0-9]+N[0-9]+'
-                ORDER BY duration
+                    t.durationDays,
+                    t.durationNights,
+                    CONCAT(t.durationDays, ' Ngày ', t.durationNights, ' Đêm') AS durationLabel
+                FROM Tour t
+                WHERE t.durationDays IS NOT NULL AND t.durationNights IS NOT NULL
+                ORDER BY t.durationDays ASC, t.durationNights ASC
             ";
 
             $stmt = $this->db->prepare($query);
@@ -92,19 +108,40 @@ class FilterModel
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             $durations = [];
+            
+            // Add default options
+            $durations[] = [
+                'value' => '2 Ngày 1 Đêm',
+                'label' => '2 Ngày 1 Đêm'
+            ];
+            
+            // Add unique durations from database
+            $seenDurations = ['2 Ngày 1 Đêm'];
             foreach ($rows as $row) {
-                if ($row['duration']) {
+                $label = $row['durationLabel'];
+                if (!in_array($label, $seenDurations)) {
                     $durations[] = [
-                        'value' => $row['duration'], 
-                        'label' => $this->formatDurationLabel($row['duration'])
+                        'value' => $label,
+                        'label' => $label
                     ];
+                    $seenDurations[] = $label;
                 }
             }
+            
+            // Add "Trên 1 tuần" option at the end
+            $durations[] = [
+                'value' => 'Trên 1 tuần',
+                'label' => 'Trên 1 tuần'
+            ];
             
             return $durations;
         } catch (PDOException $e) {
             error_log("Error fetching durations: " . $e->getMessage());
-            return null;
+            // Return default options even on error
+            return [
+                ['value' => '2 Ngày 1 Đêm', 'label' => '2 Ngày 1 Đêm'],
+                ['value' => 'Trên 1 tuần', 'label' => 'Trên 1 tuần']
+            ];
         }
     }
 
@@ -135,11 +172,13 @@ class FilterModel
 
     /**
      * Lấy tất cả filter options
+     * @param string|null $tourType 'domestic' hoặc 'international', null để lấy cả hai
+     * @param int|null $categoryId ID của category để filter theo các tour trong page
      */
-    public function getAllFilterOptions(): ?array
+    public function getAllFilterOptions(?string $tourType = null, ?int $categoryId = null): ?array
     {
         return [
-            'locations' => $this->getLocations(),
+            'locations' => $this->getLocations($tourType, $categoryId),
             'durations' => $this->getDurations(),
             'categories' => $this->getCategories()
         ];

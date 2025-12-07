@@ -15,15 +15,17 @@ class phpMailerService
         $this->mail = new PHPMailer(true);
 
         $this->mail->isSMTP();
-        $this->mail->Host       = 'smtp.gmail.com';
+        $this->mail->Host       = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
         $this->mail->SMTPAuth   = true;
-        $this->mail->Username   = 'son.trannam.bku@gmail.com';
-        $this->mail->Password   = 'uyaq gzid eeat gutp';
+        $this->mail->Username   = getenv('SMTP_USERNAME') ?: 'son.trannam.bku@gmail.com';
+        $this->mail->Password   = getenv('SMTP_PASSWORD') ?: 'uyaq gzid eeat gutp';
         $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $this->mail->Port       = 587;
+        $this->mail->Port       = (int)(getenv('SMTP_PORT') ?: 587);
 
         $this->mail->CharSet = 'UTF-8';
-        $this->mail->setFrom('son.trannam.bku@gmail.com', 'Your Website');
+        $fromEmail = getenv('SMTP_FROM_EMAIL') ?: 'son.trannam.bku@gmail.com';
+        $fromName = getenv('SMTP_FROM_NAME') ?: 'Your Website';
+        $this->mail->setFrom($fromEmail, $fromName);
     }
 
     public static function getInstance(): phpMailerService

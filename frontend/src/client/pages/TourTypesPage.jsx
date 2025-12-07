@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from 'react-router-dom';
 import styled from "styled-components";
 import { 
   IconMapPin, 
@@ -132,32 +133,6 @@ const FilterSelect = styled.select`
   }
 `;
 
-const ViewPriceButton = styled.button`
-  padding: 12px 32px;
-  background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(0, 180, 219, 0.3);
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 180, 219, 0.4);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  @media (max-width: 640px) {
-    width: 100%;
-  }
-`;
 
 const Container = styled.div`
   max-width: 1400px;
@@ -311,11 +286,6 @@ const PriceValue = styled.div`
   color: #ff4757;
 `;
 
-const OldPrice = styled.div`
-  font-size: 14px;
-  color: #999;
-  text-decoration: line-through;
-`;
 
 const RatingRow = styled.div`
   display: flex;
@@ -362,10 +332,10 @@ const TourTypesPage = () => {
   const [filters, setFilters] = useState({
     location: '',
     duration: '',
-    category: '',
     price: '',
     sortBy: ''
   });
+  const [searchParams] = useSearchParams();
 
   const [filterOptions, setFilterOptions] = useState({
     locations: [],
@@ -384,10 +354,6 @@ const TourTypesPage = () => {
     setFilters({ ...filters, [field]: value });
   };
 
-  const handleViewPrice = async () => {
-    setPage(1); // Reset to page 1 when applying filters
-    // The useEffect will handle the actual fetch with filters
-  };
 
   const toggleLike = async (id) => {
     const token = localStorage.getItem('token');
@@ -430,23 +396,28 @@ const TourTypesPage = () => {
   };
 
 
-  // Fetch tours for Tour Types page - show international tours
+  // Fetch tours for Tour Types page - show tour types (categories 3+)
   useEffect(() => {
+    // Category filter removed - TourTypesPage shows all tour types
     const fetchTours = async () => {
       setLoading(true);
       try {
         const offset = (page - 1) * pageSize;
-        const params = { limit: pageSize, offset, tourType: 'international' };
+        const params = { limit: pageSize, offset };
         
-        // Apply all filters
+        // Filter by categoryId: if category is provided, use it; otherwise show all categories (3, 4, 5, etc.)
+        // TourTypesPage shows tour types (categories 3+), not domestic/international
+        if (filters.category) {
+          params.categoryId = filters.category;
+        }
+        // If no category filter, don't filter by categoryId to show all tour types
+        
+        // Apply other filters
         if (filters.location) {
           params.location = filters.location;
         }
         if (filters.duration) {
           params.duration = filters.duration;
-        }
-        if (filters.category) {
-          params.categoryId = filters.category;
         }
         if (filters.sortBy) {
           params.sortBy = filters.sortBy;
@@ -513,12 +484,13 @@ const TourTypesPage = () => {
     };
 
     fetchTours();
-  }, [page, filters.sortBy, filters.location, filters.duration, filters.category]);
+  }, [page, filters.sortBy, filters.location, filters.duration]);
 
 
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
+        // Fetch filter options without categoryId filter (show all tours)
         const res = await api.get('/filters');
         const data = res.data?.data || {};
         setFilterOptions({
@@ -570,17 +542,6 @@ const TourTypesPage = () => {
             ))}
           </FilterSelect>
 
-          <FilterSelect 
-            value={filters.category}
-            onChange={(e) => handleFilterChange('category', e.target.value)}
-          >
-            <option value="">Loại tour</option>
-            {filterOptions.categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.tourCategoryName}</option>
-            ))}
-          </FilterSelect>
-
-          {/* Discount filter removed per UX update */}
 
           <FilterSelect 
             value={filters.price}
@@ -603,9 +564,6 @@ const TourTypesPage = () => {
             <option value="rating">Đánh giá cao nhất</option>
           </FilterSelect>
 
-          <ViewPriceButton onClick={handleViewPrice}>
-            Xem giá
-          </ViewPriceButton>
         </FilterContainer>
       </FilterBar>
 
@@ -659,7 +617,6 @@ const TourTypesPage = () => {
 
               <PriceRow>
                 <PriceValue>{tour.price !== null ? formatPrice(tour.price) : 'Đang cập nhật'}</PriceValue>
-                <OldPrice>{tour.oldPrice !== null ? formatPrice(tour.oldPrice) : ''}</OldPrice>
               </PriceRow>
 
               <RatingRow>

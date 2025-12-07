@@ -176,6 +176,20 @@ const Avatar = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: ${props => props.$hasImage ? 'block' : 'none'};
+`;
+
+const AvatarPlaceholder = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 72px;
+  font-weight: 600;
+  text-transform: uppercase;
 `;
 
 const UploadArea = styled.div`
@@ -264,7 +278,9 @@ export default function PersonalInfoSection({ userData, setUserData }) {
         email: userData?.email || '',
         phone: userData?.phone || ''
       });
-      setAvatarUrl(userData?.avatarUrl || userData?.avatar || '');
+      // Set avatar URL, but keep empty string if no avatar (to show placeholder)
+      const avatar = userData?.avatarUrl || userData?.avatar || '';
+      setAvatarUrl(avatar);
     }
   }, [userData]);
 
@@ -284,14 +300,34 @@ export default function PersonalInfoSection({ userData, setUserData }) {
   // Format date for input value (YYYY-MM-DD)
   const formatDateForInput = (dateString) => {
     if (!dateString) return '';
+    
+    // If already in YYYY-MM-DD format, return as is
     if (dateString.includes('-') && dateString.split('-')[0].length === 4) {
-      return dateString; // Already in YYYY-MM-DD format
+      // Validate it's a proper date
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return dateString.split('T')[0]; // Remove time part if present
+      }
     }
-    // Convert from DD-MM-YYYY to YYYY-MM-DD
+    
+    // Try to parse as Date object
+    const date = new Date(dateString);
+    if (!isNaN(date.getTime())) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    
+    // Try to convert from DD-MM-YYYY to YYYY-MM-DD
     const parts = dateString.split('-');
     if (parts.length === 3) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      // Check if first part is day (2 digits) or year (4 digits)
+      if (parts[0].length === 2 && parts[2].length === 4) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
     }
+    
     return dateString;
   };
 
@@ -572,7 +608,7 @@ export default function PersonalInfoSection({ userData, setUserData }) {
               type="text"
               value={formData.fullName}
               onChange={handleChange('fullName')}
-              placeholder={formData.fullName ? 'Nhập họ và tên' : 'Đã ẩn'}
+              placeholder="Nhập họ và tên"
               disabled={loading}
             />
           </FormField>
@@ -611,7 +647,7 @@ export default function PersonalInfoSection({ userData, setUserData }) {
               type="tel"
               value={formData.phone}
               onChange={handleChange('phone')}
-              placeholder={formData.phone ? 'Nhập số điện thoại' : 'Đã ẩn'}
+              placeholder="Nhập số điện thoại"
               disabled={loading}
             />
           </FormField>
@@ -632,15 +668,26 @@ export default function PersonalInfoSection({ userData, setUserData }) {
             isDragging={isDragging}
             onClick={() => !loading && !uploadingAvatar && fileInputRef.current?.click()}
           >
-            <Avatar 
-              src={avatarUrl || 'https://via.placeholder.com/200'} 
-              alt="Profile Avatar"
-              onError={(e) => {
-                console.error('Failed to load avatar image:', avatarUrl);
-                e.target.src = 'https://via.placeholder.com/200';
-              }}
-              key={avatarUrl} // Force re-render when URL changes
-            />
+            {avatarUrl ? (
+              <Avatar 
+                src={avatarUrl} 
+                alt="Profile Avatar"
+                $hasImage={true}
+                onError={(e) => {
+                  console.error('Failed to load avatar image:', avatarUrl);
+                  e.target.style.display = 'none';
+                  // Show placeholder instead
+                  const placeholder = e.target.nextElementSibling;
+                  if (placeholder) placeholder.style.display = 'flex';
+                }}
+                key={avatarUrl}
+              />
+            ) : null}
+            {!avatarUrl && (
+              <AvatarPlaceholder>
+                {(userData?.fullName || userData?.full_name || 'U')?.[0]?.toUpperCase() || 'U'}
+              </AvatarPlaceholder>
+            )}
             <UploadArea>
               {uploadingAvatar ? 'Đang tải...' : 'Kéo thả ảnh hoặc click để chọn'}
             </UploadArea>

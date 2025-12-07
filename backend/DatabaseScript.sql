@@ -6,10 +6,12 @@ CREATE TABLE User (
     avatarUrl VARCHAR(255),
     email VARCHAR(100) UNIQUE,
     phone VARCHAR(20),
+    dateOfBirth date DEFAULT NULL,
     password VARCHAR(255),
     isActive BOOLEAN DEFAULT TRUE,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP.
+    paymentInfo longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`paymentInfo`))
 );
 
 -- Bảng Post
@@ -70,6 +72,19 @@ CREATE TABLE TourItinerary (
     price DECIMAL(10,2),
     tourId INT,
     FOREIGN KEY (tourId) REFERENCES Tour(id)
+);
+
+-- Bảng CompanyInfo (moved before Place)
+CREATE TABLE CompanyInfo (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_name VARCHAR(255) NOT NULL,
+    slogan VARCHAR(255),
+    logo_url VARCHAR(500),
+    address VARCHAR(255),
+    email VARCHAR(150),
+    hotline VARCHAR(50),
+    facebook_link VARCHAR(255),
+    instagram_link VARCHAR(255)
 );
 
 -- Bảng Place
@@ -153,18 +168,6 @@ CREATE TABLE Item (
     color VARCHAR(50),
     FOREIGN KEY (section_id) REFERENCES Section(id) ON DELETE CASCADE,
     FOREIGN KEY (buttonPageId) REFERENCES Page(id) ON DELETE SET NULL
-);
-
-CREATE TABLE CompanyInfo (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    company_name VARCHAR(255) NOT NULL,
-    slogan VARCHAR(255),
-    logo_url VARCHAR(500),
-    address VARCHAR(255),
-    email VARCHAR(150),
-    hotline VARCHAR(50),
-    facebook_link VARCHAR(255),
-    instagram_link VARCHAR(255)
 );
 
 CREATE TABLE ContactMessages (

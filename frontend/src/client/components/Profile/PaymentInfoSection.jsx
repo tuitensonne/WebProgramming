@@ -175,35 +175,52 @@ export default function PaymentInfoSection({ userData, setUserData }) {
   const [message, setMessage] = useState(null);
   const [savedMethods, setSavedMethods] = useState([]);
 
-  // Initialize form data when userData loads
+  // Fetch payment info from API when component mounts or userData changes
   useEffect(() => {
-    if (userData && userData.paymentInfo) {
-      const payment = userData.paymentInfo;
+    const fetchPaymentInfo = async () => {
+      const userId = userData?.id;
+      if (!userId) return;
 
-      // Chuẩn hóa thành 1 "saved method" để hiển thị trong danh sách
-      const saved = [{
-        id: 'primary',
-        method: payment.method || payment.paymentMethod || 'card',
-        last4: payment.card?.cardNumber?.slice(-4) ||
-               payment.cardNumber?.slice(-4) ||
-               '',
-        expiry: payment.card?.expiry ||
-                payment.card?.expiryDate ||
-                payment.expiryDate ||
-                '',
-      }];
-      setSavedMethods(saved);
+      try {
+        const token = localStorage.getItem('token');
+        const resp = await api.get(`/users/${userId}/payment`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-      setFormData({
-        method: saved[0].method,
-        cardNumber: payment.card?.cardNumber || payment.cardNumber || '',
-        cardholderName: payment.card?.holderName || payment.cardHolder || '',
-        expiryDate: payment.card?.expiry || payment.card?.expiryDate || payment.expiryDate || '',
-        cvv: ''  // CVV should never be displayed for security
-      });
-    } else {
-      setSavedMethods([]);
-    }
+        const payment = resp.data?.data || resp.data;
+        
+        if (payment && Object.keys(payment).length > 0) {
+          // Chuẩn hóa thành 1 "saved method" để hiển thị trong danh sách
+          const saved = [{
+            id: 'primary',
+            method: payment.method || payment.paymentMethod || 'card',
+            last4: payment.card?.cardNumber?.slice(-4) ||
+                   payment.cardNumber?.slice(-4) ||
+                   '',
+            expiry: payment.card?.expiry ||
+                    payment.card?.expiryDate ||
+                    payment.expiryDate ||
+                    '',
+          }];
+          setSavedMethods(saved);
+
+          setFormData({
+            method: saved[0].method,
+            cardNumber: payment.card?.cardNumber || payment.cardNumber || '',
+            cardholderName: payment.card?.holderName || payment.card?.cardHolder || payment.cardHolder || '',
+            expiryDate: payment.card?.expiry || payment.card?.expiryDate || payment.expiryDate || '',
+            cvv: ''  // CVV should never be displayed for security
+          });
+        } else {
+          setSavedMethods([]);
+        }
+      } catch (error) {
+        console.error('Error fetching payment info:', error);
+        setSavedMethods([]);
+      }
+    };
+
+    fetchPaymentInfo();
   }, [userData]);
 
   // Always show the payment form so user can enter new payment info even if none exists yet
@@ -277,18 +294,41 @@ export default function PaymentInfoSection({ userData, setUserData }) {
 
       console.log('Payment update response:', resp);
 
+      // Refresh payment info from API
+      const refreshResp = await api.get(`/users/${userId}/payment`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const updatedPayment = refreshResp.data?.data || refreshResp.data;
+
       // Update local state
       if (setUserData) {
         setUserData({
           ...userData,
-          paymentInfo: {
-            method: paymentData.paymentMethod,
-            card: {
-              holderName: paymentData.cardHolder,
-              cardNumber: paymentData.cardNumber,
-              expiry: paymentData.expiryDate,
-            },
-          },
+          paymentInfo: updatedPayment
+        });
+      }
+
+      // Update form with new data
+      if (updatedPayment && Object.keys(updatedPayment).length > 0) {
+        const saved = [{
+          id: 'primary',
+          method: updatedPayment.method || updatedPayment.paymentMethod || 'card',
+          last4: updatedPayment.card?.cardNumber?.slice(-4) ||
+                 updatedPayment.cardNumber?.slice(-4) ||
+                 '',
+          expiry: updatedPayment.card?.expiry ||
+                  updatedPayment.card?.expiryDate ||
+                  updatedPayment.expiryDate ||
+                  '',
+        }];
+        setSavedMethods(saved);
+
+        setFormData({
+          method: saved[0].method,
+          cardNumber: updatedPayment.card?.cardNumber || updatedPayment.cardNumber || '',
+          cardholderName: updatedPayment.card?.holderName || updatedPayment.card?.cardHolder || updatedPayment.cardHolder || '',
+          expiryDate: updatedPayment.card?.expiry || updatedPayment.card?.expiryDate || updatedPayment.expiryDate || '',
+          cvv: ''
         });
       }
 

@@ -75,7 +75,6 @@ const Header = () => {
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isFixed, setIsFixed] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
   const location = useLocation();
   const theme = useTheme();
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
@@ -114,27 +113,6 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-<<<<<<< HEAD
-  // Đọc thông tin user từ localStorage mỗi khi route thay đổi
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("user");
-      setCurrentUser(stored ? JSON.parse(stored) : null);
-    } catch (e) {
-      console.warn("Failed to parse stored user", e);
-      setCurrentUser(null);
-    }
-  }, [location]);
-
-  const toggleDrawer = (open) => () => setDrawerOpen(open);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setCurrentUser(null);
-    navigate('/');
-    window.location.reload();
-=======
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleUserMenuOpen = (event) => setUserMenuAnchor(event.currentTarget);
   const handleUserMenuClose = () => setUserMenuAnchor(null);
@@ -149,7 +127,6 @@ const Header = () => {
   const handleProfile = () => {
     handleUserMenuClose();
     navigate("/profile");
->>>>>>> main
   };
 
   const menuItems = [
@@ -355,12 +332,8 @@ const Header = () => {
                 >
                   Liên hệ
                 </Button>
-<<<<<<< HEAD
-                {!currentUser ? (
-=======
 
                 {!isAuthenticated ? (
->>>>>>> main
                   <>
                     <ActionButton
                       variant="outlined"
@@ -386,26 +359,7 @@ const Header = () => {
                     </ActionButton>
                   </>
                 ) : (
-<<<<<<< HEAD
-                  <Box
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                    onClick={() => navigate("/profile")}
-                  >
-                    <Avatar
-                      src={currentUser.avatarUrl || currentUser.avatar || ""}
-                      alt={currentUser.fullName || currentUser.email || "User"}
-                      sx={{ width: 36, height: 36, cursor: "pointer" }}
-                    />
-                    <Typography
-                      variant="body1"
-                      sx={{ color: "#333", fontWeight: 600, cursor: "pointer" }}
-                    >
-                      {currentUser.fullName || currentUser.email}
-                    </Typography>
-                  </Box>
-=======
                   <UserMenu />
->>>>>>> main
                 )}
               </Box>
             )}
@@ -426,86 +380,36 @@ const Header = () => {
                 >
                   Đặt tour
                 </Button>
-<<<<<<< HEAD
-                {!currentUser ? (
-                  <ActionButton
-                    variant="contained"
-                    sx={{ backgroundColor: "#1976d2" }}
-                    onClick={() => navigate("/login")}
-=======
                 {!isAuthenticated ? (
                   <ActionButton
                     variant="contained"
                     onClick={() => navigate("/login")}
                     sx={{ backgroundColor: "#1976d2" }}
->>>>>>> main
                   >
                     Đăng nhập
                   </ActionButton>
                 ) : (
-<<<<<<< HEAD
-                  <Box
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                    onClick={() => navigate("/profile")}
-                  >
-                    <Avatar
-                      src={currentUser.avatarUrl || currentUser.avatar || ""}
-                      alt={currentUser.fullName || currentUser.email}
-                      sx={{ width: 32, height: 32 }}
-                    />
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "#333", fontWeight: 600 }}
-                    >
-                      {currentUser.fullName || currentUser.email}
-                    </Typography>
-                  </Box>
-=======
                   <UserMenu />
->>>>>>> main
                 )}
               </Box>
             )}
 
             {isMobile && (
               <Box sx={{ position: "absolute", right: 0 }}>
-<<<<<<< HEAD
-                {!currentUser ? (
-                  <ActionButton
-                    variant="contained"
-=======
                 {!isAuthenticated ? (
                   <ActionButton
                     variant="contained"
                     onClick={() => navigate("/login")}
->>>>>>> main
                     sx={{
                       backgroundColor: "#1976d2",
                       padding: "8px 16px",
                       fontSize: "13px",
                     }}
-<<<<<<< HEAD
-                    onClick={() => navigate("/login")}
-=======
->>>>>>> main
                   >
                     Đăng nhập
                   </ActionButton>
                 ) : (
-<<<<<<< HEAD
-                  <Box
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                    onClick={() => navigate("/profile")}
-                  >
-                    <Avatar
-                      src={currentUser.avatarUrl || currentUser.avatar || ""}
-                      alt={currentUser.fullName || currentUser.email}
-                      sx={{ width: 32, height: 32 }}
-                    />
-                  </Box>
-=======
                   <></>
->>>>>>> main
                 )}
               </Box>
             )}
@@ -523,14 +427,7 @@ const Header = () => {
                 {menuItems.map((item) => (
                   <NavButton
                     key={item.label}
-<<<<<<< HEAD
-                    endIcon={<KeyboardArrowDownIcon />}
-                    onClick={() => {
-                      if (item.path) navigate(item.path);
-                    }}
-=======
                     onClick={() => navigate(item.path)}
->>>>>>> main
                   >
                     {item.label}
                   </NavButton>
