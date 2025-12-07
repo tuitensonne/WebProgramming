@@ -31,6 +31,9 @@ use App\Controllers\SectionController;
 use App\Controllers\FooterController;
 use App\Controllers\TourController;
 use App\Controllers\ContactController;
+use App\Controllers\AdminUserController;
+use App\Controllers\CommentController;
+use App\Controllers\FaqController;
 use App\Controllers\AuthController;
 use App\Controllers\UserController;
 use App\Controllers\FilterController;
@@ -56,8 +59,8 @@ $router->put('/footers/{id}/places', [FooterController::class, 'updatePlaces']);
 /**
  * Section routes
  */
-// $router->get('/sections', [SectionController::class, 'index']);                  
-// $router->get('/sections/{id}', [SectionController::class, 'show']);              
+// $router->get('/sections', [SectionController::class, 'index']);            
+// $router->get('/sections/{id}', [SectionController::class, 'show']);      
 $router->post('/sections', [SectionController::class, 'create']);           
 $router->put('/sections/{id}', [SectionController::class, 'update']);         
 $router->delete('/sections/{id}', [SectionController::class, 'delete']);         
@@ -66,7 +69,7 @@ $router->put('/sections/reorder', [SectionController::class, 'reorder'] );
 /**
  * Comment routes
  */
-$router->post('/comments', [CommentController::class, 'create']);
+$router->get('/comments', [CommentController::class, 'getAllComments']);
 
 /**
  * Tour routes
@@ -115,7 +118,61 @@ $router->post('/users/saved-tours', [UserController::class, 'saveTour']);
 $router->delete('/users/saved-tours/{tourId}', [UserController::class, 'unsaveTour']);
 $router->get('/users/saved-tours', [UserController::class, 'getSavedTours']);
 
+
+/**
+ * Admin User Management routes (Yêu cầu quyền 'admin')
+ */
+$router->get('/admin/users', [AdminUserController::class, 'index']);
+$router->put('/admin/users/{id}', [AdminUserController::class, 'updateUserInfo']);
+$router->put('/admin/users/{id}/status', [AdminUserController::class, 'toggleStatus']);
+$router->put('/admin/users/{id}/reset-password', [AdminUserController::class, 'resetPassword']);
+
+/**
+ * FAQ Routes (Công khai)
+ */
+$router->get('/faqs', [FaqController::class, 'getFaqs']);
+$router->get('/faqs/categories', [FaqController::class, 'getFaqCategories']);
+
+
+/**
+ * FAQ Admin Routes (Yêu cầu quyền 'admin')
+ */
+$router->post('/admin/faq', [FaqController::class, 'createFaq']);
+$router->put('/admin/faq/{id}', [FaqController::class, 'updateFaq']);
+$router->delete('/admin/faq/{id}', [FaqController::class, 'deleteFaq']);
+
+$router->post('/admin/faq/categories', [FaqController::class, 'createFaqCategory']);
+$router->put('/admin/faq/categories/{id}', [FaqController::class, 'updateFaqCategory']);
+$router->delete('/admin/faq/categories/{id}', [FaqController::class, 'deleteFaqCategory']);
 // ======= END ROUTES =======
+
+// Serve static files from Storage directory
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+// Handle both /Storage/ and paths with /backend/public/Storage/
+if (strpos($uri, '/Storage/') !== false) {
+    // Extract the Storage path
+    $storagePath = substr($uri, strpos($uri, '/Storage/'));
+    $filePath = dirname(__DIR__) . $storagePath;
+    if (file_exists($filePath) && is_file($filePath)) {
+        $mimeType = mime_content_type($filePath);
+        if (!$mimeType) {
+            $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+            $mimeTypes = [
+                'jpg' => 'image/jpeg',
+                'jpeg' => 'image/jpeg',
+                'png' => 'image/png',
+                'gif' => 'image/gif',
+                'webp' => 'image/webp',
+                'pdf' => 'application/pdf',
+            ];
+            $mimeType = $mimeTypes[strtolower($ext)] ?? 'application/octet-stream';
+        }
+        header('Content-Type: ' . $mimeType);
+        header('Content-Length: ' . filesize($filePath));
+        readfile($filePath);
+        exit;
+    }
+}
 
 // Backwards-compatible aliases for servers that include index.php in the path
 $router->get('/index.php/footers', [FooterController::class, 'getFooter']);

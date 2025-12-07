@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\UserModel;
 use App\Services\JwtService;
+use App\Services\S3Service;
 use PDO;
 
 class UserController extends Controller
@@ -284,10 +285,29 @@ class UserController extends Controller
                 return $this->error('Upload error: ' . $file['error'], 400);
             }
 
+            $avatarUrl = null;
+
+            // Try to upload to S3 first
+            $s3Service = S3Service::getInstance();
+            if ($s3Service->isConfigured()) {
+                $uploadResult = $s3Service->upload($file, 'avatars/');
+                
+                if ($uploadResult['success']) {
+                    $avatarUrl = $uploadResult['url'];
+                } else {
+                    // Log S3 error but continue with local fallback
+                    error_log('S3 upload failed: ' . ($uploadResult['error'] ?? 'Unknown error'));
+                }
+            }
+
+            // Fallback to local storage if S3 is not configured or failed
+            if (!$avatarUrl) {
             // Create storage directory if not exists
             $uploadDir = dirname(__DIR__) . '/../Storage/uploads/avatars/';
             if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
+                    if (!mkdir($uploadDir, 0755, true)) {
+                        return $this->error('Failed to create upload directory', 500);
+                    }
             }
 
             // Generate unique filename
@@ -298,15 +318,59 @@ class UserController extends Controller
             // Move uploaded file
             if (!move_uploaded_file($file['tmp_name'], $filepath)) {
                 return $this->error('Failed to save file', 500);
+                }
+
+                // Build full URL for local storage
+                // Get the base URL from the request
+                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+                $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                
+                // Get the base path from REQUEST_URI or SCRIPT_NAME
+                // Remove /backend/public from the path
+                $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+                $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+                
+                // Extract base path - typically /ltweb/btl/WebProgramming/backend/public
+                // We want to keep only up to /backend/public
+                $basePath = dirname($scriptName);
+                $basePath = rtrim(str_replace('\\', '/', $basePath), '/');
+                
+                // Construct URL - the Storage route will be handled by index.php
+                $avatarUrl = "{$protocol}://{$host}{$basePath}/Storage/uploads/avatars/{$filename}";
             }
 
             // Update user avatar URL in database
-            $avatarUrl = '/Storage/uploads/avatars/' . $filename;
             $updated = $this->userModel->updateProfile($id, ['avatarUrl' => $avatarUrl]);
 
             if (!$updated) {
-                // Clean up uploaded file
-                unlink($filepath);
+                // Clean up uploaded file if database update failed
+                if (strpos($avatarUrl, 'http://') === 0 || strpos($avatarUrl, 'https://') === 0) {
+                    // Check if it's S3 URL or local storage URL
+                    if (strpos($avatarUrl, '.s3.') !== false || strpos($avatarUrl, 'amazonaws.com') !== false) {
+                        // S3 file - try to delete
+                        try {
+                            $s3Service->deleteByUrl($avatarUrl);
+                        } catch (\Exception $e) {
+                            // Log but don't fail
+                            error_log('Failed to delete S3 file: ' . $e->getMessage());
+                        }
+                    } else {
+                        // Local storage URL - extract file path
+                        $parsedUrl = parse_url($avatarUrl);
+                        if (isset($parsedUrl['path']) && strpos($parsedUrl['path'], '/Storage/') !== false) {
+                            $localPath = dirname(__DIR__) . '/..' . $parsedUrl['path'];
+                            if (file_exists($localPath)) {
+                                unlink($localPath);
+                            }
+                        }
+                    }
+                } else if (strpos($avatarUrl, '/Storage/') === 0) {
+                    // Relative path local file
+                    $localPath = dirname(__DIR__) . '/..' . $avatarUrl;
+                    if (file_exists($localPath)) {
+                        unlink($localPath);
+                    }
+                }
                 return $this->error('Failed to update avatar', 500);
             }
 
@@ -806,3 +870,4 @@ class UserController extends Controller
             }
         }
 }
+

@@ -9,14 +9,18 @@ import {
   Link,
   InputAdornment,
   IconButton,
+  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Alert,
   Zoom,
+  Snackbar,
   keyframes,
 } from "@mui/material";
+
+import api from "../../api/api";
+
 import {
   Visibility,
   VisibilityOff,
@@ -28,7 +32,7 @@ import {
 
 import signup from "../../assets/images/signup.png";
 import logo from "../../assets/images/logo.png";
-import api from "../../api/api";
+
 const slideFromRight = keyframes`
   from {
     transform: translateX(100%);
@@ -57,7 +61,7 @@ export default function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [openForgotPassword, setOpenForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
-    fullname: "",
+    fullName: "",
     email: "",
     phone: "",
     password: "",
@@ -66,13 +70,22 @@ export default function SignUpPage() {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [resetEmail, setResetEmail] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    // Clear error when user starts typing
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+
     if (touched[name]) {
       validateField(name, value);
     }
@@ -80,7 +93,10 @@ export default function SignUpPage() {
 
   const handleBlur = (e) => {
     const { name, value } = e.target;
-    setTouched({ ...touched, [name]: true });
+    setTouched({
+      ...touched,
+      [name]: true,
+    });
     validateField(name, value);
   };
 
@@ -109,6 +125,7 @@ export default function SignUpPage() {
 
   const validateForm = () => {
     const newErrors = {};
+
     Object.keys(formData).forEach((key) => {
       if (!formData[key].trim()) {
         newErrors[key] = `Trường này không được để trống`;
@@ -118,15 +135,18 @@ export default function SignUpPage() {
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Email không hợp lệ";
     }
+
     if (
       formData.phone &&
       !/^\d{10,}$/.test(formData.phone.replace(/[^\d]/g, ""))
     ) {
       newErrors.phone = "Số điện thoại không hợp lệ";
     }
+
     if (formData.password && formData.password.length < 6) {
       newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
     }
+
     if (
       formData.confirmPassword &&
       formData.confirmPassword !== formData.password
@@ -138,91 +158,58 @@ export default function SignUpPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const showSnackbar = (msg, severity = "success") => {
+    setSnackbar({ open: true, message: msg, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     setTouched({
-      fullname: true,
+      fullName: true,
       email: true,
       phone: true,
       password: true,
       confirmPassword: true,
     });
 
-    if (validateForm()) {
-      (async () => {
-        try {
-          setLoading(true);
+    if (!validateForm()) {
+      setErrorMessage("Vui lòng điền đầy đủ và chính xác thông tin!");
+      return;
+    }
 
-          // Call backend signup endpoint
-          const resp = await api.post("/auth/signup", {
-            fullName: formData.fullname,
-            email: formData.email,
-            phone: formData.phone,
-            password: formData.password,
-          });
+    try {
+      setLoading(true);
+      setErrorMessage("");
 
-          console.log("Signup response:", resp);
-          const data = resp.data?.data || resp.data;
-          console.log("Signup data:", data);
+      const { confirmPassword, ...signupData } = formData;
 
-          setShowSuccess(true);
+      const res = await api.post("/auth/signup", signupData);
 
-          // Auto-login after successful signup (optional)
-          // Try to login with the credentials they just provided
-          try {
-            const loginResp = await api.post("/auth/login", {
-              email: formData.email,
-              password: formData.password,
-            });
-            
-            const loginData = loginResp.data?.data || loginResp.data;
-            const token = loginData?.token;
-            const user = loginData?.user;
-
-            if (token) {
-              localStorage.setItem("token", token);
-            }
-
-            // Fetch full profile after login and store it (ensures fullName/phone present)
-            let userToStore = user;
-            if (user && user.id && token) {
-              try {
-                const profileRes = await api.get(`/users/${user.id}`, {
-                  headers: { Authorization: `Bearer ${token}` },
-                });
-                const profileData = profileRes.data?.data || profileRes.data;
-                if (profileData) userToStore = profileData;
-              } catch (e) {
-                console.warn('Auto-login: could not fetch full profile', e);
-              }
-            }
-
-            if (userToStore) {
-              localStorage.setItem("user", JSON.stringify(userToStore));
-            }
-
-            // Redirect to landing page after successful login
-            setTimeout(() => {
-              navigate("/", { replace: true });
-            }, 500);
-          } catch (loginErr) {
-            console.log("Auto-login failed, user can login manually:", loginErr);
-            // Just redirect to login page if auto-login fails
-            setTimeout(() => {
-              navigate("/login", { replace: true });
-            }, 1500);
-          }
-        } catch (err) {
-          console.error("Signup error:", err);
-          console.error("Error response:", err?.response?.data);
-          
-          const msg = err?.response?.data?.message || err?.response?.data?.error || err.message || "Signup failed";
-          alert(msg);
-          setShowSuccess(false);
-        } finally {
-          setLoading(false);
-        }
-      })();
+      if (res.data?.success) {
+        showSnackbar("Tạo user thành công!", "success");
+        setFormData({
+          fullName: "",
+          email: "",
+          phone: "",
+          password: "",
+          confirmPassword: "",
+        });
+        setTimeout(() => {
+          navigate("/login");
+        }, 800);
+      } else {
+        showSnackbar("Gửi thất bại. Vui lòng thử lại!", "error");
+      }
+    } catch (error) {
+      console.error("Error sending contact:", error);
+      showSnackbar("Có lỗi xảy ra khi đăng ký!", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -323,14 +310,6 @@ export default function SignUpPage() {
             </Typography>
           </Box>
 
-          {showSuccess && (
-            <Zoom in={showSuccess}>
-              <Alert severity="success" sx={{ mb: 3 }}>
-                Đăng ký thành công!
-              </Alert>
-            </Zoom>
-          )}
-
           <Box component="form" onSubmit={handleSubmit}>
             <TextField
               fullWidth
@@ -339,13 +318,13 @@ export default function SignUpPage() {
                   Họ và tên <span style={{ color: "red" }}>*</span>
                 </span>
               }
-              name="fullname"
-              value={formData.fullname}
+              name="fullName"
+              value={formData.fullName}
               onChange={handleChange}
               onBlur={handleBlur}
               margin="normal"
-              error={touched.fullname && !!errors.fullname}
-              helperText={touched.fullname && errors.fullname}
+              error={touched.fullName && !!errors.fullName}
+              helperText={touched.fullName && errors.fullName}
               sx={{
                 ...textFieldStyle(0.4),
                 "& .MuiFormHelperText-root": { minHeight: "5px" },
@@ -515,28 +494,6 @@ export default function SignUpPage() {
                 ),
               }}
             />
-            <Box
-              sx={{
-                textAlign: "right",
-                mt: 1,
-                animation: `${fadeInUp} 0.5s ease-out 0.8s both`,
-              }}
-            >
-              <Link
-                component="button"
-                type="button"
-                variant="body2"
-                onClick={() => setOpenForgotPassword(true)}
-                sx={{
-                  cursor: "pointer",
-                  color: "#FF5F00",
-                  transition: "all 0.3s ease",
-                  "&:hover": { color: "#CC4A00" },
-                }}
-              >
-                Quên mật khẩu?
-              </Link>
-            </Box>
 
             <Button
               fullWidth
@@ -545,18 +502,19 @@ export default function SignUpPage() {
               type="submit"
               disabled={loading}
               sx={{
-                mt: 3,
-                mb: 2,
+                bgcolor: "#ed782aff",
+                borderRadius: 1,
                 py: 1.5,
-                fontSize: "16px",
-                background: "linear-gradient(135deg, #FF8C42 0%, #FF5F00 100%)",
-                animation: `${fadeInUp} 0.5s ease-out 0.9s both`,
+                textTransform: "none",
+                fontSize: 16,
+                fontWeight: 500,
+                mb: 3,
+                animation: `${fadeInUp} 0.5s ease-out 0.8s both`,
                 transition: "all 0.3s ease",
                 "&:hover": {
-                  background:
-                    "linear-gradient(135deg, #E6762E 0%, #CC4A00 100%)",
+                  bgcolor: "#fbbb91ff",
                   transform: "translateY(-3px)",
-                  boxShadow: "0 10px 25px rgba(255, 95, 0, 0.4)",
+                  boxShadow: "0 10px 20px rgba(187, 131, 79, 0.3)",
                 },
               }}
             >
@@ -643,6 +601,21 @@ export default function SignUpPage() {
           </Dialog>
         </Container>
       </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          variant="filled"
+          severity={snackbar.severity}
+          onClose={handleCloseSnackbar}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

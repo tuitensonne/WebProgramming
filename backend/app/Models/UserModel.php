@@ -5,7 +5,7 @@ use App\Core\Database;
 use PDO;
 use PDOException;
 
-class UserModel
+class UserModel extends Database 
 {
     private PDO $db;
 
@@ -73,48 +73,152 @@ class UserModel
         }
     }
 
-    public function update(int $id, array $data): bool
+    public function updateUserInfo(int $id, array $data): bool
     {
         try {
-            $query = "
+            $sql = "
                 UPDATE User
-                SET role = :role,
-                    fullName = :fullName,
+                SET fullName = :fullName,
                     avatarUrl = :avatarUrl,
                     email = :email,
                     phone = :phone,
-                    isActive = :isActive
-                WHERE id = :id
+                    updatedAt = NOW()
+                WHERE id = :id AND role = 'user'
             ";
 
-            $stmt = $this->db->prepare($query);
+            $stmt = $this->db->prepare($sql);
 
-            $stmt->bindParam(':role',      $data['role']);
-            $stmt->bindParam(':fullName',  $data['fullName']);
-            $stmt->bindParam(':avatarUrl', $data['avatarUrl']);
-            $stmt->bindParam(':email',     $data['email']);
-            $stmt->bindParam(':phone',     $data['phone']);
-            $stmt->bindParam(':isActive',  $data['isActive'], PDO::PARAM_BOOL);
-            $stmt->bindParam(':id',        $id, PDO::PARAM_INT);
+            // Bind tham số
+            $stmt->bindParam(':fullName',   $data['fullName']);
+            $stmt->bindParam(':avatarUrl',  $data['avatarUrl']);
+            $stmt->bindParam(':email',      $data['email']);
+            $stmt->bindParam(':phone',      $data['phone']);
+            $stmt->bindParam(':id',         $id, PDO::PARAM_INT);
 
             return $stmt->execute();
 
         } catch (PDOException $e) {
-            error_log("Lỗi update user: " . $e->getMessage());
+            error_log("Lỗi updateUserInfo: " . $e->getMessage());
             return false;
         }
     }
 
-    public function delete(int $id): bool
-    {
-        try {
-            $query = "DELETE FROM User WHERE id = :id";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+    public function getFilteredUsers($params) {
+        $offset = ($params['page'] - 1) * $params['limit'];
+        $sortableColumns = ['id', 'fullName', 'email', 'createdAt', 'updatedAt', 'isActive'];
 
+        $sortKey = in_array($params['sortKey'], $sortableColumns) ? $params['sortKey'] : 'id';
+        $sortDirection = (strtoupper($params['sortDirection']) === 'DESC') ? 'DESC' : 'ASC';
+
+        $sql = "SELECT id, fullName, email, phone, isActive, createdAt, updatedAt, avatarUrl 
+                FROM `User`
+                WHERE role = 'user'";
+
+        $conditions = [];
+        $executeParams = [];
+
+        // 1. Filter active
+        if ($params['activeFilter'] !== 'all') {
+            $conditions[] = "isActive = :isActiveStatus";
+            $executeParams[':isActiveStatus'] = ($params['activeFilter'] === 'active' ? 1 : 0);
+        }
+
+        // 2. Advanced Search Fix
+        if (!empty($params['search'])) {
+            $searchTerms = explode(' ', strtolower(trim($params['search'])));
+            $searchConditions = [];
+            $i = 0;
+
+            foreach ($searchTerms as $term) {
+                if (empty($term)) continue;
+
+                // Tạo key UNIQUE riêng cho từng field
+                $fullNameKey = ":fullName$i";
+                $emailKey    = ":email$i";
+                $phoneKey    = ":phone$i";
+
+                // Bind từng param
+                $executeParams[$fullNameKey] = "%$term%";
+                $executeParams[$emailKey]    = "%$term%";
+                $executeParams[$phoneKey]    = "%$term%";
+
+                $searchConditions[] = "(
+                    LOWER(fullName) LIKE $fullNameKey OR
+                    LOWER(email) LIKE $emailKey OR
+                    phone LIKE $phoneKey
+                )";
+
+                $i++;
+            }
+
+            if (!empty($searchConditions)) {
+                $conditions[] = "(" . implode(" OR ", $searchConditions) . ")";
+            }
+        }
+
+        // merge conditions
+        if (!empty($conditions)) {
+            $sql .= " AND " . implode(" AND ", $conditions);
+        }
+
+        // COUNT
+        $countSql = "SELECT COUNT(*) FROM `User` WHERE role = 'user'";
+        if (!empty($conditions)) {
+            $countSql .= " AND " . implode(" AND ", $conditions);
+        }
+
+        $countStmt = $this->db->prepare($countSql);
+        $countStmt->execute($executeParams);
+        $totalCount = $countStmt->fetchColumn();
+
+        // MAIN query
+        $sql .= " ORDER BY $sortKey $sortDirection LIMIT :limit OFFSET :offset";
+
+        // Add limit + offset AFTER count
+        $executeParams[':limit'] = (int)$params['limit'];
+        $executeParams[':offset'] = (int)$offset;
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($executeParams);
+
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'items' => $items,
+            'totalCount' => $totalCount,
+            'totalPages' => ceil($params['limit'] > 0 ? $totalCount / $params['limit'] : 1),
+            'currentPage' => $params['page']
+        ];
+    }
+
+    
+
+    // Cập nhật trạng thái người dùng
+    public function updateUserStatus($userId, $status) {
+        try {
+             $sql = "UPDATE User SET isActive = :status, updatedAt = NOW() WHERE id = :id AND role = 'user'";
+             $stmt = $this->db->prepare($sql);
+             $stmt->bindParam(':status', $status, PDO::PARAM_INT);
+             $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
+             
+             return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Lỗi updateUserStatus: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Cập nhật mật khẩu người dùng
+    public function updatePassword($userId, $hashedPassword) {
+        try {
+            $sql = "UPDATE User SET password = :password, updatedAt = NOW() WHERE id = :id AND role = 'user'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':password', $hashedPassword);
+            $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
+            
             return $stmt->execute();
         } catch (PDOException $e) {
-            error_log("Lỗi delete user: " . $e->getMessage());
+            error_log("Lỗi updatePassword: " . $e->getMessage());
             return false;
         }
     }

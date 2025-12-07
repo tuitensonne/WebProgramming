@@ -150,13 +150,55 @@ const AvatarSection = styled.div`
   }
 `;
 
-const Avatar = styled.img`
+const AvatarWrapper = styled.div`
+  position: relative;
   width: 200px;
   height: 200px;
   border-radius: 50%;
-  object-fit: cover;
+  overflow: hidden;
   border: 4px solid #fff;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transform: scale(1.02);
+  }
+
+  ${props => props.isDragging && `
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.2);
+  `}
+`;
+
+const Avatar = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const UploadArea = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.3s;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  padding: 16px;
+
+  ${AvatarWrapper}:hover & {
+    opacity: 1;
+  }
 `;
 
 const UploadButton = styled.label`
@@ -207,8 +249,11 @@ export default function PersonalInfoSection({ userData, setUserData }) {
   const [avatarFile, setAvatarFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const dateInputRef = React.useRef(null);
+  const fileInputRef = React.useRef(null);
 
   // Initialize form data when userData loads
   useEffect(() => {
@@ -261,15 +306,166 @@ export default function PersonalInfoSection({ userData, setUserData }) {
     dateInputRef.current?.showPicker();
   };
 
+  const validateAndSetFile = (file) => {
+    if (!file) return false;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setMessage({ error: 'Chỉ chấp nhận file ảnh: JPEG, PNG, GIF, WebP' });
+      setTimeout(() => setMessage(null), 3000);
+      return false;
+    }
+
+    // Validate file size (5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setMessage({ error: 'File quá lớn. Kích thước tối đa: 5MB' });
+      setTimeout(() => setMessage(null), 3000);
+      return false;
+    }
+
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarUrl(reader.result);
+    };
+    reader.readAsDataURL(file);
+    return true;
+  };
+
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if (file && validateAndSetFile(file)) {
+      // Auto upload when file is selected
+      handleAvatarUpload(file);
+    }
+    // Reset input to allow selecting the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file && validateAndSetFile(file)) {
+      // Auto upload when file is dropped
+      handleAvatarUpload(file);
+    }
+  };
+
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile();
+        if (file && validateAndSetFile(file)) {
+          // Auto upload when image is pasted
+          handleAvatarUpload(file);
+        }
+        break;
+      }
+    }
+  };
+
+  const handleAvatarUpload = async (file) => {
+    if (!file) return;
+
+    try {
+      setUploadingAvatar(true);
+      setMessage(null);
+
+      let userId = userData?.id;
+      if (!userId) {
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.id) {
+            userId = parsed.id;
+          }
+        }
+
+        if (!userId) {
+          setMessage({ error: 'User ID not found. Vui lòng đăng nhập.' });
+          return;
+        }
+      }
+
+      const formDataObj = new FormData();
+      formDataObj.append('avatar', file);
+
+      const token = localStorage.getItem('token');
+      const avatarResp = await api.post(`/users/${userId}/avatar`, formDataObj, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      const uploadedUser = avatarResp.data?.data || avatarResp.data;
+      const newAvatarUrl = uploadedUser?.avatarUrl || uploadedUser?.avatar;
+
+      console.log('Avatar upload response:', uploadedUser);
+      console.log('New avatar URL:', newAvatarUrl);
+
+      if (newAvatarUrl) {
+        // Clean up the URL - remove any query params first, then add timestamp
+        const cleanUrl = newAvatarUrl.split('?')[0];
+        const avatarWithTimestamp = cleanUrl + '?t=' + Date.now();
+        
+        console.log('Setting avatar URL:', avatarWithTimestamp);
+        setAvatarUrl(avatarWithTimestamp);
+        setAvatarFile(null);
+
+        // Update user data
+        const updatedUser = {
+          ...(userData || {}),
+          ...uploadedUser,
+          avatarUrl: newAvatarUrl,
+          avatar: newAvatarUrl
+        };
+
+        if (setUserData) {
+          setUserData(updatedUser);
+        }
+
+        // Update localStorage for Header
+        try {
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          // Trigger custom event to update Header
+          window.dispatchEvent(new CustomEvent('userUpdated'));
+        } catch (e) {
+          console.warn('Failed to update stored user after avatar upload', e);
+        }
+
+        setMessage({ success: 'Ảnh đại diện đã được cập nhật thành công!' });
+        setTimeout(() => setMessage(null), 3000);
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      const errorMsg = error?.response?.data?.message || error.message || 'Lỗi khi tải ảnh lên';
+      setMessage({ error: errorMsg });
+      setTimeout(() => setMessage(null), 3000);
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -312,20 +508,14 @@ export default function PersonalInfoSection({ userData, setUserData }) {
       const resp = await api.put(`/users/${userId}/profile`, profileData, { headers });
       console.log('Profile update response:', resp);
 
-      // Upload avatar if changed
-      if (avatarFile) {
-        const formDataObj = new FormData();
-        formDataObj.append('avatar', avatarFile);
-
-        const avatarResp = await api.post(`/users/${userId}/avatar`, formDataObj, {
-          headers: {
-            ...headers,
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-        console.log('Avatar upload response:', avatarResp);
+      // Upload avatar if changed (but not already uploaded)
+      if (avatarFile && !uploadingAvatar) {
+        await handleAvatarUpload(avatarFile);
       }
 
+      // Get updated user data from API response if available
+      const updatedUserData = resp.data?.data || resp.data;
+      
       // Build updated user object (merge with existing)
       const updatedUser = {
         ...(userData || {}),
@@ -333,7 +523,8 @@ export default function PersonalInfoSection({ userData, setUserData }) {
         email: formData.email,
         phone: formData.phone,
         dateOfBirth: formData.dateOfBirth,
-        avatarUrl: avatarUrl
+        ...(updatedUserData || {}),
+        avatarUrl: updatedUserData?.avatarUrl || updatedUserData?.avatar || avatarUrl
       };
 
       // Update local state
@@ -344,6 +535,8 @@ export default function PersonalInfoSection({ userData, setUserData }) {
       // Đồng bộ lại localStorage để Header đọc được tên mới
       try {
         localStorage.setItem('user', JSON.stringify(updatedUser));
+        // Trigger custom event to update Header
+        window.dispatchEvent(new CustomEvent('userUpdated'));
       } catch (e) {
         console.warn('Failed to update stored user after profile save', e);
       }
@@ -428,18 +621,44 @@ export default function PersonalInfoSection({ userData, setUserData }) {
           </SaveButton>
         </FormSection>
 
-        <AvatarSection>
-          <Avatar src={avatarUrl || 'https://via.placeholder.com/200'} alt="Profile Avatar" />
-          <UploadButton disabled={loading}>
+        <AvatarSection
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onPaste={handlePaste}
+          tabIndex={0}
+        >
+          <AvatarWrapper
+            isDragging={isDragging}
+            onClick={() => !loading && !uploadingAvatar && fileInputRef.current?.click()}
+          >
+            <Avatar 
+              src={avatarUrl || 'https://via.placeholder.com/200'} 
+              alt="Profile Avatar"
+              onError={(e) => {
+                console.error('Failed to load avatar image:', avatarUrl);
+                e.target.src = 'https://via.placeholder.com/200';
+              }}
+              key={avatarUrl} // Force re-render when URL changes
+            />
+            <UploadArea>
+              {uploadingAvatar ? 'Đang tải...' : 'Kéo thả ảnh hoặc click để chọn'}
+            </UploadArea>
+          </AvatarWrapper>
+          <UploadButton disabled={loading || uploadingAvatar}>
             <IconUpload size={20} />
-            {loading ? 'Đang tải...' : 'Chọn ảnh'}
+            {uploadingAvatar ? 'Đang tải...' : loading ? 'Đang lưu...' : 'Chọn ảnh'}
             <input
+              ref={fileInputRef}
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
-              disabled={loading}
+              disabled={loading || uploadingAvatar}
             />
           </UploadButton>
+          <div style={{ fontSize: '12px', color: '#999', textAlign: 'center', maxWidth: '200px' }}>
+            Kéo thả ảnh, paste hoặc click để chọn. Hỗ trợ: JPEG, PNG, GIF, WebP (tối đa 5MB)
+          </div>
         </AvatarSection>
       </FormGrid>
     </Container>

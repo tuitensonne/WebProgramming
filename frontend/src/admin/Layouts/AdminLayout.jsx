@@ -2,8 +2,7 @@ import React, { useState, createContext, useMemo, useCallback } from "react";
 import { Outlet } from "react-router-dom";
 import AlertNotification from "../components/Alert";
 import ConfirmModal from "../components/ConfirmModal";
-import AdminHeader from "../components/AdminHeader";
-import AdminSidebar from "../components/AdminSidebar";
+import Header from "../components/Header";
 
 export const UIContext = createContext();
 
@@ -49,15 +48,8 @@ export default function AdminLayout() {
   return (
     <UIContext.Provider value={contextValue}>
       <div className="page d-flex">
-        {/* SIDEBAR RESPONSIVE */}
-        {/* <AdminSidebar /> */}
-
-        {/* MAIN WRAPPER */}
+        <Header />
         <div className="page-wrapper flex-grow-1">
-          {/* Header nếu cần */}
-          {/* <AdminHeader /> */}
-
-          {/* Nội dung */}
           <div className="page-body">
             <div className="container-xl">
               <Outlet />
@@ -65,7 +57,6 @@ export default function AdminLayout() {
           </div>
         </div>
 
-        {/* Toast & Modal */}
         <AlertNotification {...toast} />
 
         <ConfirmModal
