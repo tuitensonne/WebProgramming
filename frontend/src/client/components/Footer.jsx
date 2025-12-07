@@ -318,7 +318,7 @@ export default function Footer({ data }) {
                     px: 3,
                     fontSize: "16px",
                     "&:hover": { backgroundColor: "#d65f3c" },
-                    pointerEvents: "none", // để click vào khu vực nút vẫn redirect
+                    pointerEvents: "none",
                   }}
                 >
                   Gửi

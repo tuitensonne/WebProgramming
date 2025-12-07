@@ -1,6 +1,7 @@
 // src/components/LandingPage/ContentSectionTypeOne.jsx
-import { Box, Typography, Grid } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { motion } from "framer-motion";
+import * as Icons from "@mui/icons-material";
 
 const containerVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -13,36 +14,49 @@ const itemVariants = {
 };
 
 export const LandingPageLayoutOne = ({ data }) => {
-  const { title, subtitle, backgroundColor, items = [], imageUrl } = data;
+  if (!data) return null;
+
+  const {
+    title,
+    subtitle,
+    description,
+    backgroundColor,
+    image_url,
+    items = [],
+  } = data;
 
   return (
     <Box
-        sx={{
-          py: { xs: 8, md: 12 },
-          px: { xs: 2, sm: 4, md: 8 },
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: { xs: 6, md: 8 },
-          position: "relative",
-          overflow: "hidden",
-          backgroundColor: "#d0d0d042",
-        }}
+      sx={{
+        py: { xs: 8, md: 12 },
+        px: { xs: 2, sm: 4, md: 8 },
+        display: "flex",
+        flexDirection: { xs: "column", md: "row" },
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: { xs: 6, md: 8 },
+        backgroundColor: backgroundColor || "#f5f5f5",
+        overflow: "hidden",
+      }}
+      component={motion.div}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.3 }}
+      variants={containerVariants}
+    >
+      {/* LEFT CONTENT */}
+      <Box
+        sx={{ flex: 1, minWidth: 300 }}
         component={motion.div}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
-        variants={containerVariants}
+        variants={itemVariants}
       >
-        <Box
-          sx={{ flex: 1, minWidth: 300 }}
-          component={motion.div}
-          variants={itemVariants}
-        >
+        {subtitle && (
           <Typography variant="subtitle1" color="#ff7043" fontWeight={600}>
-            Fast & Easy
+            {subtitle}
           </Typography>
+        )}
+
+        {title && (
           <Typography
             variant="h3"
             fontWeight="bold"
@@ -50,35 +64,30 @@ export const LandingPageLayoutOne = ({ data }) => {
               color: "#0A093D",
               lineHeight: 1.2,
               mt: 1,
-              mb: 4,
+              mb: 3,
               fontSize: { xs: "2rem", md: "2.8rem" },
             }}
           >
-            Get Your Favourite <br /> Resort Bookings
+            {title}
           </Typography>
+        )}
 
-          {[
-            {
-              color: "#FFB800",
-              icon: "📍",
-              title: "Choose Destination",
-              desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Urna, tortor tempus.",
-            },
-            {
-              color: "#FF6B4A",
-              icon: "📅",
-              title: "Check Availability",
-              desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Urna, tortor tempus.",
-            },
-            {
-              color: "#1B7B8F",
-              icon: "🚗",
-              title: "Let’s Go",
-              desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Urna, tortor tempus.",
-            },
-          ].map((step, idx) => (
+        {description && (
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mb: 4, maxWidth: 500 }}
+          >
+            {description}
+          </Typography>
+        )}
+
+        {items.map((item) => {
+          const MUIIcon = Icons[item.icon] || Icons["Star"];
+
+          return (
             <Box
-              key={idx}
+              key={item.id}
               sx={{
                 display: "flex",
                 alignItems: "flex-start",
@@ -87,82 +96,73 @@ export const LandingPageLayoutOne = ({ data }) => {
               component={motion.div}
               variants={itemVariants}
             >
+              {/* Icon Box */}
               <Box
                 sx={{
                   width: 50,
                   height: 50,
                   borderRadius: 2,
-                  backgroundColor: step.color,
+                  backgroundColor: item.color || "#ccc",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 24,
+                  fontSize: 28,
                   color: "#fff",
                   mr: 2.5,
                 }}
               >
-                {step.icon}
+                <MUIIcon sx={{ fontSize: 30 }} />
               </Box>
+
+              {/* Text */}
               <Box>
-                <Typography fontWeight={600}>{step.title}</Typography>
+                <Typography fontWeight={600}>
+                  {item.title || "Untitled"}
+                </Typography>
                 <Typography color="text.secondary" variant="body2">
-                  {step.desc}
+                  {item.desc || ""}
                 </Typography>
               </Box>
             </Box>
-          ))}
-        </Box>
+          );
+        })}
+      </Box>
 
+      {/* RIGHT IMAGE */}
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          justifyContent: { xs: "flex-start", md: "flex-start" },
+          width: "100%",
+        }}
+      >
         <Box
           sx={{
-            flex: 1,
-            position: "relative",
-            display: "flex",
-            justifyContent: { xs: "flex-start", md: "flex-start" }, 
-            mt: { xs: 6, md: 0 },
-            width: "100%",
+            backgroundColor: "#fff",
+            borderRadius: 4,
+            boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
+            overflow: "hidden",
+            width: { xs: "100%", sm: 360, md: 600 },
+            p: { xs: 2, sm: 3 },
+            mx: "auto",
           }}
         >
           <Box
+            component="img"
+            src={image_url}
+            alt={title}
             sx={{
-              backgroundColor: "#fff",
-              borderRadius: 4,
-              boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
-              overflow: "hidden",
-              width: { xs: "100%", sm: 360, md: 400 }, 
-              maxWidth: { md: 400 },
-              p: { xs: 2, sm: 3 },
-              position: "relative",
-              mx: "auto",
+              borderRadius: 3,
+              width: "100%",
+              height: { xs: 180, sm: 200, md: 300 },
+              objectFit: "cover",
             }}
-          >
-            <Box
-              component="img"
-              src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&q=80&w=800"
-              alt="Resort"
-              sx={{
-                borderRadius: 3,
-                width: "100%",
-                height: { xs: 180, sm: 200, md: 220 },
-                objectFit: "cover",
-              }}
-            />
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="h6" fontWeight={600}>
-                Trip to Hawaii
-              </Typography>
-              <Typography color="text.secondary" variant="body2" mb={1}>
-                14–29 June | by JR Martir
-              </Typography>
-
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <Typography variant="body2" color="primary" fontWeight={600}>
-                  Ongoing
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
+          />
         </Box>
       </Box>
+    </Box>
   );
 };
+
+export default LandingPageLayoutOne;
