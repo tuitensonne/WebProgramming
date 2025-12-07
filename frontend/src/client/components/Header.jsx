@@ -168,6 +168,16 @@ const Header = () => {
                                     Giới thiệu
                                 </Button>
                                 <Button
+                                    sx={{
+                                        color: "#666",
+                                        textTransform: "none",
+                                        fontSize: "14px",
+                                    }}
+                                    onClick={() => navigate("/faqs")}
+                                >
+                                    FAQ
+                                </Button>
+                                <Button
                                     startIcon={
                                         <HelpOutlineIcon
                                             sx={{ fontSize: 18 }}
