@@ -16,18 +16,7 @@ class FaqModel
         $this->db = Database::getInstance()->getConnection();
     }
 
-    // =======================================================
-    // QUẢN LÝ CÂU HỎI (FAQ)
-    // =======================================================
-
-    /**
-     * Lấy danh sách câu hỏi FAQ có phân trang, join với danh mục.
-     * @param int $limit Số lượng item trên mỗi trang
-     * @param int $offset Vị trí bắt đầu
-     * @param int|null $categoryId Lọc theo categoryId
-     * @return array|null
-     */
-    public function getAllFaqs($limit, $offset, $categoryId = null): ?array
+    public function getAllFaqs($limit, $offset, $categoryId = null, $includeHidden = false): ?array
     {
         try {
             $sql = "
@@ -38,23 +27,30 @@ class FaqModel
                 LEFT JOIN {$this->categoryTable} c ON f.categoryId = c.id
             ";
             
+            $whereClauses = [];
             $params = [];
             
+            if (!$includeHidden) {
+                $whereClauses[] = "f.isPublished = 1";
+            }
+            
             if ($categoryId !== null && $categoryId > 0) {
-                $sql .= " WHERE f.categoryId = :categoryId";
+                $whereClauses[] = "f.categoryId = :categoryId";
                 $params[':categoryId'] = $categoryId;
+            }
+            
+            if (!empty($whereClauses)) {
+                $sql .= " WHERE " . implode(' AND ', $whereClauses);
             }
             
             $sql .= " ORDER BY f.faqOrder ASC, f.id ASC LIMIT :limit OFFSET :offset";
 
             $stmt = $this->db->prepare($sql);
             
-            // Bind parameters
             foreach ($params as $key => &$value) {
                 $stmt->bindParam($key, $value);
             }
 
-            // Bind limit and offset using integer type for security
             $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
 
@@ -158,10 +154,6 @@ class FaqModel
         }
     }
     
-    // =======================================================
-    // QUẢN LÝ DANH MỤC (FAQCategory)
-    // =======================================================
-
     /**
      * Lấy tất cả danh mục FAQ, sắp xếp theo thứ tự.
      */
@@ -221,15 +213,12 @@ class FaqModel
     public function deleteFaqCategory(int $id): bool
     {
         try {
-            // Bước 1: Đặt categoryId của các FAQ liên quan về NULL hoặc một category mặc định
             $this->db->prepare("UPDATE {$this->table} SET categoryId = NULL WHERE categoryId = :id")
                      ->execute([':id' => $id]);
                      
-            // Bước 2: Xóa danh mục
             $stmt = $this->db->prepare("DELETE FROM {$this->categoryTable} WHERE id = :id");
             return $stmt->execute([':id' => $id]);
         } catch (PDOException $e) {
-            // Lỗi có thể do khóa ngoại (nếu bước 1 thất bại)
             error_log('FaqModel::deleteFaqCategory error: ' . $e->getMessage());
             return false;
         }

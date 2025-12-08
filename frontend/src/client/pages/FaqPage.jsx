@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Box,
     Typography,
@@ -10,20 +11,17 @@ import {
     Button,
     Tabs,
     Tab,
-    Paper, // Dùng Paper cho các khối nội dung
+    Paper,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import CategoryIcon from "@mui/icons-material/Category";
 import { motion } from "framer-motion";
-// FIX LỖI: Giả định api nằm ở cấp trên (ví dụ: ../../api/api hoặc ../api/api)
 import api from "../../api/api";
 
-// --- API Endpoints ---
 const FAQ_API_ENDPOINT = "/faqs";
 const CATEGORIES_API_ENDPOINT = "/faqs/categories";
 
-// --- FRAMER MOTION VARIANTS ---
 const containerVariants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
@@ -37,40 +35,32 @@ const itemVariants = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
-// --- END FRAMER MOTION VARIANTS ---
 
-/**
- * Trang FAQ dành cho khách hàng, sử dụng Material UI Accordion và lọc theo danh mục.
- */
 export const FaqPage = () => {
     const ACCENT_COLOR = "#ff7043";
+    const navigate = useNavigate();
 
     const [faqs, setFaqs] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isError, setIsError] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState(0); // 0 là 'Tất cả'
+    const [selectedCategory, setSelectedCategory] = useState(0);
 
-    // 1. FETCH DATA TỪ API (FAQs và Categories)
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             setIsError(false);
             try {
-                // Fetch Categories
                 const catRes = await api.get(CATEGORIES_API_ENDPOINT);
                 let cats = catRes.data?.success ? catRes.data.data : [];
-                // Thêm danh mục 'Tất cả' vào đầu
                 cats = [
                     { id: 0, categoryName: "Tất cả", categoryOrder: -1 },
                     ...cats,
                 ];
                 setCategories(cats);
 
-                // Fetch FAQs
                 const faqRes = await api.get(FAQ_API_ENDPOINT);
                 if (faqRes.data?.success) {
-                    // Giả định API trả về mảng các FAQ (id, question, answer, categoryId...)
                     setFaqs(faqRes.data.data.faqs || []);
                 } else {
                     setIsError(true);
@@ -89,10 +79,8 @@ export const FaqPage = () => {
         setSelectedCategory(newValue);
     }, []);
 
-    // Logic lọc FAQ theo danh mục
     const filteredFaqs = useMemo(() => {
         if (selectedCategory === 0) {
-            // Sắp xếp theo faqOrder, categoryOrder, rồi id
             return faqs.sort((a, b) => a.faqOrder - b.faqOrder);
         }
         return faqs
@@ -100,7 +88,6 @@ export const FaqPage = () => {
             .sort((a, b) => a.faqOrder - b.faqOrder);
     }, [faqs, selectedCategory]);
 
-    // Tìm tên danh mục hiện tại
     const currentCategoryName = useMemo(() => {
         const cat = categories.find((c) => c.id === selectedCategory);
         return cat
@@ -109,6 +96,10 @@ export const FaqPage = () => {
             ? "Tất cả Câu hỏi"
             : "Danh mục không tồn tại";
     }, [categories, selectedCategory]);
+
+    const handleRequestSupport = useCallback(() => {
+        navigate("/contact");
+    }, [navigate]);
 
     if (loading) {
         return (
@@ -139,10 +130,9 @@ export const FaqPage = () => {
             }}
             component={motion.div}
             initial="hidden"
-            animate="visible" // Dùng animate thay vì whileInView để chạy animation 1 lần
+            animate="visible"
             variants={containerVariants}
         >
-            {/* Header Section */}
             <Box
                 textAlign="center"
                 maxWidth="1000px"
@@ -167,7 +157,6 @@ export const FaqPage = () => {
                 </Typography>
             </Box>
 
-            {/* Image/CTA Section (Added Section) */}
             <Paper
                 elevation={3}
                 sx={{
@@ -184,7 +173,6 @@ export const FaqPage = () => {
                 component={motion.div}
                 variants={itemVariants}
             >
-                {/* Overlay làm tối ảnh để chữ nổi bật */}
                 <Box
                     sx={{
                         position: "absolute",
@@ -223,28 +211,26 @@ export const FaqPage = () => {
                         <Button
                             variant="contained"
                             size="large"
+                            onClick={handleRequestSupport}
                             sx={{
                                 backgroundColor: "#fff",
                                 color: ACCENT_COLOR,
                                 "&:hover": { backgroundColor: "#f0f0f0" },
                             }}
                         >
-                            Gửi Yêu cầu Hỗ trợ
+                            Liên hệ ngay
                         </Button>
                     </Grid>
                 </Grid>
             </Paper>
 
-            {/* Main Content: Category Filter (Left) and Accordion List (Right) */}
             <Grid container spacing={4}>
-                {/* Cột Trái: Category Tabs (Responsive: Full width on mobile, 30% on desktop) */}
                 <Grid item xs={12} md={3}>
                     <Paper
                         elevation={2}
                         sx={{
                             p: 2,
                             borderRadius: 2,
-                            // Dùng sticky cho desktop để tabs giữ nguyên khi cuộn
                             position: { md: "sticky" },
                             top: { md: 20 },
                         }}
@@ -266,11 +252,9 @@ export const FaqPage = () => {
                             Danh mục
                         </Typography>
 
-                        {/* Tabs Lọc */}
                         <Tabs
                             value={selectedCategory}
                             onChange={handleChangeCategory}
-                            // Responsive: Stacked vertical on desktop, Scrollable horizontal on mobile
                             orientation={
                                 window.innerWidth > 960
                                     ? "vertical"
@@ -296,7 +280,6 @@ export const FaqPage = () => {
                                     "&.Mui-selected": {
                                         color: ACCENT_COLOR,
                                     },
-                                    // Tối ưu cho layout dọc/ngang
                                     justifyContent: "flex-start",
                                     padding: "12px 16px",
                                 },
@@ -313,7 +296,6 @@ export const FaqPage = () => {
                     </Paper>
                 </Grid>
 
-                {/* Cột Phải: FAQ Accordion List (Responsive: 70% on desktop) */}
                 <Grid item xs={12} md={9}>
                     <Box mb={3} component={motion.div} variants={itemVariants}>
                         <Typography
@@ -369,7 +351,6 @@ export const FaqPage = () => {
                                         backgroundColor: "#fcfcfc",
                                     }}
                                 >
-                                    {/* Sử dụng dangerouslySetInnerHTML để render nội dung TEXT/HTML nếu có */}
                                     <Typography
                                         color="text.secondary"
                                         dangerouslySetInnerHTML={{

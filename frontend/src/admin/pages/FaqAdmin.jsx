@@ -13,24 +13,29 @@ import {
     IconArrowLeft,
     IconArrowRight,
     IconArrowsMove,
+    IconChevronLeft,
+    IconChevronRight,
+    IconArrowsSort,
 } from "@tabler/icons-react";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"; // Dùng cho Drag and Drop trong Modal Danh mục
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const ITEMS_PER_PAGE = 10;
 
-// Hàm lấy Icon sắp xếp (tương tự AdminUserManagement)
 const getSortIcon = (key, sortConfig) => {
-    if (sortConfig.key !== key) return null;
+    const defaultIcon = (
+        <IconArrowsSort size={16} className="ms-1 text-muted" />
+    );
+
+    if (sortConfig.key !== key) {
+        return defaultIcon;
+    }
+
     return sortConfig.direction === "asc" ? (
         <IconChevronUp size={16} className="ms-1" />
     ) : (
         <IconChevronDown size={16} className="ms-1" />
     );
 };
-
-// =======================================================
-// MODAL QUẢN LÝ DANH MỤC FAQ (CRUD Category) - CÓ SẮP XẾP
-// =======================================================
 
 const CategoryModal = ({ show, onClose, categories, refetchCategories }) => {
     const [name, setName] = useState("");
@@ -52,14 +57,12 @@ const CategoryModal = ({ show, onClose, categories, refetchCategories }) => {
         }
     }, [show, categories]);
 
-    // Xử lý Drag and Drop
     const handleDragEnd = (result) => {
         if (!result.destination) return;
         const newCategories = Array.from(localCategories);
         const [moved] = newCategories.splice(result.source.index, 1);
         newCategories.splice(result.destination.index, 0, moved);
 
-        // Cập nhật lại thứ tự (order)
         const updated = newCategories.map((c, idx) => ({
             ...c,
             categoryOrder: idx + 1,
@@ -67,7 +70,6 @@ const CategoryModal = ({ show, onClose, categories, refetchCategories }) => {
         setLocalCategories(updated);
     };
 
-    // THÊM/SỬA DANH MỤC
     const handleSubmit = async () => {
         if (!name.trim()) {
             showToast("Tên danh mục không được trống.", "danger");
@@ -93,7 +95,7 @@ const CategoryModal = ({ show, onClose, categories, refetchCategories }) => {
                     `Đã ${editMode ? "cập nhật" : "thêm"} danh mục thành công!`,
                     "success"
                 );
-                refetchCategories(); // Tải lại danh sách chính
+                refetchCategories();
                 setEditMode(false);
                 setEditedCategory(null);
                 setName("");
@@ -108,18 +110,15 @@ const CategoryModal = ({ show, onClose, categories, refetchCategories }) => {
         }
     };
 
-    // LƯU THỨ TỰ (ORDER) MỚI SAU KHI KÉO THẢ
     const handleSaveOrder = async () => {
         setIsSavingOrder(true);
         try {
-            // Chuẩn bị payload chỉ gồm ID và order
             const orderPayload = localCategories.map((c, index) => ({
                 id: c.id,
                 categoryOrder: index + 1,
-                categoryName: c.categoryName, // Gửi categoryName đi kèm cho API PUT nếu cần
+                categoryName: c.categoryName,
             }));
 
-            // Do chúng ta không có API reorder Category chuyên dụng, ta sẽ gọi PUT cho từng Category
             await Promise.all(
                 orderPayload.map((item) =>
                     api.put(`/admin/faq/categories/${item.id}`, item)
@@ -187,7 +186,6 @@ const CategoryModal = ({ show, onClose, categories, refetchCategories }) => {
                     </div>
                     <div className="modal-body">
                         <div className="row">
-                            {/* CỘT QUẢN LÝ THỨ TỰ & DRAG AND DROP */}
                             <div className="col-md-7">
                                 <h5>Thứ tự hiển thị</h5>
                                 <p className="text-muted small">
@@ -405,10 +403,6 @@ const CategoryModal = ({ show, onClose, categories, refetchCategories }) => {
     );
 };
 
-// =======================================================
-// MODAL THÊM/SỬA FAQ (CRUD Question - Giữ nguyên)
-// =======================================================
-// [FaqModal code]... (Giữ nguyên)
 const FaqModal = ({ show, onClose, faq, categories, refetch }) => {
     const [formData, setFormData] = useState({});
     const [submitting, setSubmitting] = useState(false);
@@ -422,7 +416,7 @@ const FaqModal = ({ show, onClose, faq, categories, refetch }) => {
                 answer: faq?.answer || "",
                 categoryId: faq?.categoryId || categories[0]?.id || "",
                 faqOrder: faq?.faqOrder || 0,
-                isPublished: faq?.isPublished ?? 1, // Mặc định là 1 (TRUE)
+                isPublished: faq?.isPublished ?? 1,
             });
         }
     }, [show, faq, categories]);
@@ -605,31 +599,25 @@ const FaqModal = ({ show, onClose, faq, categories, refetch }) => {
     );
 };
 
-// =======================================================
-// COMPONENT CHÍNH: QUẢN LÝ FAQ
-// =======================================================
-
 export default function FaqAdmin() {
     const [faqs, setFaqs] = useState([]);
     const [categories, setCategories] = useState([]);
     const [totalFaqs, setTotalFaqs] = useState(0);
     const [loading, setLoading] = useState(true);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
-    const [editCategoryData, setEditCategoryData] = useState(null); // Không dùng khi Category Modal dùng cho CRUD list
+    const [editCategoryData, setEditCategoryData] = useState(null);
     const [showFaqModal, setShowFaqModal] = useState(false);
     const [editFaqData, setEditFaqData] = useState(null);
 
     const [currentPage, setCurrentPage] = useState(1);
-    const [selectedCategoryId, setSelectedCategoryId] = useState(0); // 0 = All
+    const [selectedCategoryId, setSelectedCategoryId] = useState(0);
     const [sortConfig, setSortConfig] = useState({
         key: "faqOrder",
         direction: "asc",
-    }); // Thêm sortConfig
+    });
     const { showToast, showConfirm } = useContext(UIContext);
 
     const ITEMS_PER_PAGE = 10;
-
-    // --- FETCH DATA ---
 
     const fetchFaqs = async () => {
         setLoading(true);
@@ -637,7 +625,7 @@ export default function FaqAdmin() {
             page: currentPage,
             limit: ITEMS_PER_PAGE,
             categoryId: selectedCategoryId,
-            // Thêm tham số sắp xếp (giả định backend hỗ trợ)
+            includeHidden: "true",
             sortKey: sortConfig.key,
             sortDirection: sortConfig.direction,
         };
@@ -661,7 +649,6 @@ export default function FaqAdmin() {
 
     const fetchCategories = async () => {
         try {
-            // Lấy categories ở đây để tránh lỗi đồng bộ khi mở CategoryModal
             const res = await api.get("/faqs/categories");
             if (res.data?.success) {
                 setCategories(res.data.data || []);
@@ -673,13 +660,11 @@ export default function FaqAdmin() {
 
     useEffect(() => {
         fetchFaqs();
-    }, [currentPage, selectedCategoryId, sortConfig.key, sortConfig.direction]); // Thêm dependencies
+    }, [currentPage, selectedCategoryId, sortConfig.key, sortConfig.direction]);
 
     useEffect(() => {
         fetchCategories();
-    }, [showCategoryModal]); // Refetch categories sau khi đóng modal
-
-    // --- HANDLERS ---
+    }, [showCategoryModal]);
 
     const handleAddFaq = () => {
         setEditFaqData(null);
@@ -726,7 +711,6 @@ export default function FaqAdmin() {
     return (
         <div className="page-wrapper">
             <div className="container-xl">
-                {/* Header và Nút Hành động */}
                 <div className="page-header d-print-none">
                     <div className="row align-items-center">
                         <div className="col">
@@ -761,32 +745,52 @@ export default function FaqAdmin() {
                 <div className="col-12">
                     <div className="card">
                         <div className="card-header">
-                            {/* DROP DOWN LỌC THEO DANH MỤC */}
                             <div className="d-flex align-items-center">
-                                <span className="me-2 text-muted">
-                                    Lọc theo:
-                                </span>
-                                <select
-                                    className="form-select form-select-sm w-auto"
-                                    value={selectedCategoryId}
-                                    onChange={(e) => {
-                                        setSelectedCategoryId(
-                                            parseInt(e.target.value)
-                                        );
-                                        setCurrentPage(1);
-                                    }}
-                                >
-                                    <option value={0}>Tất cả Danh mục</option>
-                                    {categories.map((cat) => (
-                                        <option key={cat.id} value={cat.id}>
-                                            {cat.categoryName}
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className="dropdown me-3">
+                                    <button
+                                        className="btn dropdown-toggle btn-outline-secondary"
+                                        type="button"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false"
+                                    >
+                                        {categories.find(
+                                            (c) => c.id === selectedCategoryId
+                                        )?.categoryName || "Tất cả Danh mục"}
+                                    </button>
+                                    <div className="dropdown-menu">
+                                        {[
+                                            {
+                                                id: 0,
+                                                categoryName: "Tất cả Danh mục",
+                                            }, // Đổi name thành categoryName để đồng bộ với categories
+                                            ...categories,
+                                        ].map((cat) => (
+                                            <a
+                                                key={cat.id}
+                                                // Thêm text-dark để đảm bảo chữ tương phản khi dropdown-item active
+                                                className={`dropdown-item ${
+                                                    selectedCategoryId ===
+                                                    cat.id
+                                                        ? "active text-dark" // <-- SỬA ĐỂ KHẮC PHỤC LỖI TRÙNG MÀU CHỮ
+                                                        : ""
+                                                }`}
+                                                href="#"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    setSelectedCategoryId(
+                                                        cat.id
+                                                    );
+                                                    setCurrentPage(1);
+                                                }}
+                                            >
+                                                {cat.categoryName}
+                                            </a>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Bảng Hiển thị Dữ liệu */}
                         <div className="table-responsive">
                             <table className="table card-table table-vcenter text-nowrap datatable table-hover">
                                 <thead>
@@ -810,7 +814,7 @@ export default function FaqAdmin() {
                                             )}
                                         </th>
                                         <th
-                                            className="cursor-pointer"
+                                            className="cursor-pointer d-none d-sm-table-cell" // <-- ẨN TRÊN MÀN HÌNH NHỎ (XS)
                                             onClick={() =>
                                                 requestSort("categoryName")
                                             }
@@ -822,7 +826,7 @@ export default function FaqAdmin() {
                                             )}
                                         </th>
                                         <th
-                                            className="cursor-pointer"
+                                            className="cursor-pointer d-none d-md-table-cell" // <-- ẨN TRÊN MÀN HÌNH NHỎ VÀ VỪA
                                             onClick={() =>
                                                 requestSort("faqOrder")
                                             }
@@ -846,7 +850,7 @@ export default function FaqAdmin() {
                                             )}
                                         </th>
                                         <th
-                                            className="cursor-pointer"
+                                            className="cursor-pointer d-none d-lg-table-cell"
                                             onClick={() =>
                                                 requestSort("updatedAt")
                                             }
@@ -867,7 +871,7 @@ export default function FaqAdmin() {
                                                 colSpan={7}
                                                 className="text-center py-4"
                                             >
-                                                <CircularProgress size={24} />{" "}
+                                                <span className="spinner-border spinner-border-sm me-2"></span>
                                                 Đang tải...
                                             </td>
                                         </tr>
@@ -902,13 +906,18 @@ export default function FaqAdmin() {
                                                         ...
                                                     </div>
                                                 </td>
-                                                <td>
+                                                <td className="d-none d-sm-table-cell">
+                                                    {" "}
+                                                    {/* <-- ẨN TRÊN MÀN HÌNH NHỎ */}
                                                     <span className="badge bg-info-lt">
                                                         {faq.categoryName ||
                                                             "Chưa phân loại"}
                                                     </span>
                                                 </td>
-                                                <td>{faq.faqOrder}</td>
+                                                <td className="d-none d-md-table-cell">
+                                                    {faq.faqOrder}
+                                                </td>{" "}
+                                                {/* <-- ẨN TRÊN MÀN HÌNH NHỎ VÀ VỪA */}
                                                 <td>
                                                     <span
                                                         className={`badge bg-${
@@ -922,7 +931,9 @@ export default function FaqAdmin() {
                                                             : "Ẩn"}
                                                     </span>
                                                 </td>
-                                                <td>{faq.updatedAt}</td>
+                                                <td className="d-none d-lg-table-cell">
+                                                    {faq.updatedAt}
+                                                </td>
                                                 <td className="text-end">
                                                     <div className="btn-list flex-nowrap">
                                                         <button
@@ -960,7 +971,6 @@ export default function FaqAdmin() {
                             </table>
                         </div>
 
-                        {/* Thanh Phân trang (Pagination) */}
                         <div className="card-footer d-flex align-items-center">
                             <p className="m-0 text-muted">
                                 Hiển thị từ{" "}
@@ -1041,8 +1051,8 @@ export default function FaqAdmin() {
                     setShowCategoryModal(false);
                     setEditCategoryData(null);
                 }}
-                categories={categories} // Truyền danh sách categories để CategoryModal có thể sắp xếp
-                refetchCategories={fetchCategories} // Thêm refetchCategories cho CategoryModal
+                categories={categories}
+                refetchCategories={fetchCategories}
             />
 
             <FaqModal
@@ -1055,41 +1065,3 @@ export default function FaqAdmin() {
         </div>
     );
 }
-
-const IconChevronLeft = (props) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="icon"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        strokeWidth="2"
-        stroke="currentColor"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        {...props}
-    >
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-        <polyline points="15 6 9 12 15 18"></polyline>
-    </svg>
-);
-
-const IconChevronRight = (props) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="icon"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        strokeWidth="2"
-        stroke="currentColor"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        {...props}
-    >
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-        <polyline points="9 6 15 12 9 18"></polyline>
-    </svg>
-);
