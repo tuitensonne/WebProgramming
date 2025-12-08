@@ -168,3 +168,4 @@ class PostController extends Controller
             return $this->error('Failed to delete post', 500, $e->getMessage());
         }
     }
+}
