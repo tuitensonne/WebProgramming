@@ -54,4 +54,38 @@ class TourModel
             return null;
         }
     }
+     /**
+     * Lấy danh sách tour (dùng cho trang cẩm nang / travel guides)
+     *
+     * @param int $limit
+     * @return array|null
+     */
+    public function getAllTours(int $limit = 100): ?array
+    {
+        try {
+            $query = "
+                SELECT
+                    t.id,
+                    t.name,
+                    t.shortDescription,
+                    t.thumbnailUrl,
+                    c.tourCategoryName AS categoryName
+                FROM Tour t
+                LEFT JOIN TourCategory c ON t.categoryId = c.id
+                ORDER BY t.id DESC
+                LIMIT :limit
+            ";
+
+
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Lỗi khi lấy danh sách tour: " . $e->getMessage());
+            return null;
+        }
+    }
 }

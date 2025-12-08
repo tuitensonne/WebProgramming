@@ -53,4 +53,27 @@ class TourController extends Controller
             return $this->error('Failed to fetch categories', 500, $e->getMessage());
         }
     }
+    
+    /**
+     * Trả về danh sách tour (travel guides)
+     */
+    public function getAllTours() {
+        try {
+            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 100;
+
+
+            $tours = $this->tourModel->getAllTours($limit);
+
+
+            if ($tours === null) {
+                return $this->error('Failed to fetch tours', 500);
+            }
+
+
+            return $this->success($tours, 'Fetched tours successfully');
+        } catch (\Exception $e) {
+            return $this->error('Failed to fetch tours', 500, $e->getMessage());
+        }
+    }
+
 }

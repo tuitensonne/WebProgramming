@@ -95,4 +95,66 @@ class CommentModel
             return null;
         }
     }
+
+    /**
+     * Get comments for a specific post
+     *
+     * @param int $postId
+     * @return array|null
+     */
+    public function getCommentsByPostId(int $postId): ?array
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT 
+                    c.id,
+                    c.userId,
+                    c.content,
+                    c.rating,
+                    c.createdAt,
+                    u.fullName,
+                    u.avatarUrl
+                FROM Comment c
+                LEFT JOIN User u ON c.userId = u.id
+                WHERE c.postId = :postId
+                ORDER BY c.createdAt DESC
+            ");
+
+            $stmt->bindParam(':postId', $postId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('CommentModel::getCommentsByPostId error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Create a comment for a post
+     *
+     * @param array $data
+     * @return int|null
+     */
+    public function createForPost(array $data): ?int
+    {
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO Comment (postId, userId, content, rating, createdAt)
+                VALUES (:postId, :userId, :content, :rating, NOW())
+            ");
+
+            $stmt->execute([
+                ':postId' => $data['postId'] ?? null,
+                ':userId' => $data['userId'] ?? null,
+                ':content' => $data['content'] ?? null,
+                ':rating' => $data['rating'] ?? null
+            ]);
+
+            return (int)$this->db->lastInsertId();
+        } catch (PDOException $e) {
+            error_log('CommentModel::createForPost error: ' . $e->getMessage());
+            return null;
+        }
+    }
 }

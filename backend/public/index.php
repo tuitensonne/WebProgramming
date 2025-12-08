@@ -27,6 +27,10 @@ use App\Controllers\CommentController;
 use App\Controllers\FaqController;
 use App\Controllers\AuthController;
 
+use App\Controllers\PostController;
+use App\Controllers\CommentPostController;
+
+use App\Controllers\PostCommentController;
 $router = new Router();
 
 // ======= ROUTES =======
@@ -108,5 +112,24 @@ $router->post('/admin/faq/categories', [FaqController::class, 'createFaqCategory
 $router->put('/admin/faq/categories/{id}', [FaqController::class, 'updateFaqCategory']);
 $router->delete('/admin/faq/categories/{id}', [FaqController::class, 'deleteFaqCategory']);
 // ======= END ROUTES =======
+$router->get('/tours', [TourController::class, 'getAllTours']);
+
+/**
+ * Post (Travel Guide) routes
+ */
+$router->get('/posts', [PostController::class, 'getAllPosts']);
+$router->get('/posts/{id}', [PostController::class, 'getPostById']);
+$router->get('/posts/locations', [PostController::class, 'getLocations']);
+$router->post('/admin/posts', [PostController::class, 'createPost']);
+$router->put('/admin/posts/{id}', [PostController::class, 'updatePost']);
+$router->delete('/admin/posts/{id}', [PostController::class, 'deletePost']);
+
+/**
+ * Post Comment routes
+ */
+$router->get('/posts/{postId}/comments', [CommentPostController::class, 'getCommentsByPost']);
+$router->post('/posts/{postId}/comments', [CommentPostController::class, 'addComment']);
+// $router->patch('/comments/{id}/like', [CommentPostController::class, 'likeComment']);
+$router->delete('/admin/posts/{postId}/comments/{commentId}', [CommentPostController::class, 'deleteComment']);
 
 $router->dispatch();
