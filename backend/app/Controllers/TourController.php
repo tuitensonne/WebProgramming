@@ -3,15 +3,18 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\TourModel;
+use App\Models\TourServiceModel;
 use App\Models\CategoryModel;
 
 class TourController extends Controller
 {
     private TourModel $tourModel;
+    private TourServiceModel $tourServiceModel;
     private CategoryModel $categoryModel;
 
     public function __construct() {
         $this->tourModel = new TourModel();
+        $this->tourServiceModel = new TourServiceModel();
         $this->categoryModel = new CategoryModel();
     }
 
@@ -85,10 +88,11 @@ class TourController extends Controller
             $sortBy = $_GET['sortBy'] ?? null;
             $location = $_GET['location'] ?? null;
             $duration = $_GET['duration'] ?? null;
+            $price = $_GET['price'] ?? null;
             $limit = (int)($_GET['limit'] ?? 20);
             $offset = (int)($_GET['offset'] ?? 0);
 
-            $tours = $this->tourModel->getAllTours($categoryId, $limit, $offset, $tourType, $sortBy, $location, $duration);
+            $tours = $this->tourModel->getAllTours($categoryId, $limit, $offset, $tourType, $sortBy, $location, $duration, $price);
 
             // Return empty array instead of error if no tours found
             if ($tours === null) {
@@ -116,6 +120,14 @@ class TourController extends Controller
             if (!$tour) {
                 return $this->error('Tour not found', 404);
             }
+
+            // Fetch tour services (included/excluded)
+            $services = $this->tourServiceModel->getServicesByTourId((int)$id);
+            $tour['services'] = $services ?? [];
+            
+            // Separate included and excluded services for easier frontend usage
+            $tour['includedServices'] = array_values(array_filter($services ?? [], fn($s) => $s['type'] === 'included'));
+            $tour['excludedServices'] = array_values(array_filter($services ?? [], fn($s) => $s['type'] === 'excluded'));
 
             return $this->success($tour, 'Fetched tour successfully');
         } catch (\Exception $e) {

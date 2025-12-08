@@ -2,97 +2,93 @@
 namespace App\Models;
 
 use App\Core\Database;
-use PDO;
-use PDOException;
 
-class CommentModel
-{
-    private PDO $db;
-    private string $table = 'Comment';
-    private string $userTable = 'User';
+class CommentModel {
+    private $db;
 
-
-    public function __construct()
-    {
-        $this->db = Database::getInstance()->getConnection();
+    public function __construct() {
+        $this->db = Database::getInstance();
     }
 
-    public function create(array $data): ?int
-    {
-        try {
-            $stmt = $this->db->prepare("
-                INSERT INTO Comment (post_id, user_id, content, rating)
-                VALUES (:tourId, :user_id, :content, :rating)
-            ");
+    public function createComment($userId, $tourId, $content, $rating) {
+        $sql = "INSERT INTO Comments (userId, tourId, content, rating) VALUES (:userId, :tourId, :content, :rating)";
+        <?php
+        namespace App\Models;
 
-            $stmt->execute([
-                ':post_id' => $data['post_id'] ?? null,
-                ':user_id' => $data['user_id'] ?? null,
-                ':content' => $data['content'] ?? null,
-                ':rating' => $data['rating'] ?? null,
-                ':description' => $data['description'] ?? null,
-            ]);
+        use App\Core\Database;
 
-            return (int)$this->db->lastInsertId();
-        } catch (PDOException $e) {
-            error_log('SectionModel::create error: ' . $e->getMessage());
-            return null;
-        }
-    }
+        class CommentModel {
+            private $db;
 
-    public function getCommentWithHighestRating(): ?array
-    {
-        try {
-            $stmt = $this->db->prepare("
-                SELECT * 
-                FROM Comment
-                ORDER BY rating DESC
-                LIMIT 3
-            ");
-
-            $stmt->execute();
-
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log('CommentModel::getCommentWithHighestRating error: ' . $e->getMessage());
-            return null;
-        }
-    }
-    public function getAllCommentsWithUsers(): ?array
-    {
-        try {
-            $stmt = $this->db->prepare("
-                SELECT 
-                    c.id, c.content, c.rating, c.createdAt,
-                    u.fullName, u.avatarUrl, u.id as userId
-                FROM {$this->table} c
-                INNER JOIN {$this->userTable} u ON c.userId = u.id
-                ORDER BY c.rating DESC, c.createdAt DESC
-            ");
-
-            $stmt->execute();
-            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            // Chuyển đổi định dạng kết quả sang cấu trúc frontend mong muốn (join User data)
-            $formattedResults = [];
-            foreach ($results as $row) {
-                $formattedResults[] = [
-                    'id' => $row['id'],
-                    'content' => $row['content'],
-                    'rating' => (int)$row['rating'],
-                    'createdAt' => $row['createdAt'],
-                    'user' => [
-                        'id' => $row['userId'],
-                        'fullName' => $row['fullName'],
-                        'avatarUrl' => $row['avatarUrl'],
-                    ]
-                ];
+            public function __construct() {
+                $this->db = Database::getInstance();
             }
 
-            return $formattedResults;
-        } catch (PDOException $e) {
-            error_log('CommentModel::getAllCommentsWithUsers error: ' . $e->getMessage());
-            return null;
+            public function createComment($userId, $tourId, $content, $rating = null) {
+                try {
+                    $stmt = $this->db->getConnection()->prepare(
+                        "INSERT INTO `Comments` (userId, tourId, content, rating) VALUES (:userId, :tourId, :content, :rating)"
+                    );
+
+                    $stmt->execute([
+                        ':userId' => $userId,
+                        ':tourId' => $tourId,
+                        ':content' => $content,
+                        ':rating' => $rating
+                    ]);
+
+                    return (int)$this->db->getConnection()->lastInsertId();
+                } catch (\PDOException $e) {
+                    throw new \Exception('Error creating comment: ' . $e->getMessage());
+                }
+            }
+
+            public function getCommentsByTour($tourId) {
+                try {
+                    $stmt = $this->db->getConnection()->prepare(
+                        "SELECT c.id, c.content, c.rating, c.createdAt, u.id as userId, u.fullName, u.avatarUrl
+                         FROM `Comments` c
+                         LEFT JOIN `User` u ON u.id = c.userId
+                         WHERE c.tourId = :tourId
+                         ORDER BY c.createdAt DESC"
+                    );
+                    $stmt->execute([':tourId' => $tourId]);
+                    return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+                } catch (\PDOException $e) {
+                    throw new \Exception('Error fetching comments: ' . $e->getMessage());
+                }
+            }
+
+            public function getAllCommentsWithUsers() {
+                try {
+                    $stmt = $this->db->getConnection()->prepare(
+                        "SELECT c.id, c.content, c.rating, c.createdAt, u.id as userId, u.fullName, u.avatarUrl
+                         FROM `Comments` c
+                         LEFT JOIN `User` u ON u.id = c.userId
+                         ORDER BY c.rating DESC, c.createdAt DESC"
+                    );
+                    $stmt->execute();
+                    return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+                } catch (\PDOException $e) {
+                    throw new \Exception('Error fetching comments: ' . $e->getMessage());
+                }
+            }
+
+            public function getCommentWithHighestRating($limit = 3) {
+                try {
+                    $stmt = $this->db->getConnection()->prepare(
+                        "SELECT c.id, c.content, c.rating, c.createdAt, u.id as userId, u.fullName, u.avatarUrl
+                         FROM `Comments` c
+                         LEFT JOIN `User` u ON u.id = c.userId
+                         ORDER BY c.rating DESC, c.createdAt DESC
+                         LIMIT :limit"
+                    );
+                    $stmt->bindValue(':limit', (int)$limit, \PDO::PARAM_INT);
+                    $stmt->execute();
+                    return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+                } catch (\PDOException $e) {
+                    throw new \Exception('Error fetching top comments: ' . $e->getMessage());
+                }
+            }
         }
-    }
-}
+        try {

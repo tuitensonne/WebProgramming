@@ -62,6 +62,8 @@ CREATE TABLE Tour (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255),
     shortDescription TEXT,
+    overview TEXT NULL,
+    highlights TEXT NULL,
     postId INT,
     thumbnailUrl VARCHAR(255),
     tourType VARCHAR(100),
@@ -115,12 +117,23 @@ CREATE TABLE TourDestination(
 );
 -- Bảng Booking
 CREATE TABLE Booking (
-    userId INT,
-    tourId INT,
+    userId INT NOT NULL,
+    tourId INT NOT NULL,
+    startDate DATE,
+    endDate DATE,
     totalCost DECIMAL(10,2),
     numberOfChild INT,
+    numberOfBaby INT DEFAULT 0,
     numberOfAdult INT,
     status VARCHAR(50),
+    fullName VARCHAR(255),
+    email VARCHAR(255),
+    phone VARCHAR(20),
+    address TEXT,
+    note TEXT,
+    paymentMethod ENUM('card', 'bank', 'cash'),
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (userId, tourId),
     FOREIGN KEY (userId) REFERENCES User(id),
     FOREIGN KEY (tourId) REFERENCES Tour(id)
@@ -136,6 +149,16 @@ CREATE TABLE SavedTour (
     FOREIGN KEY (tourId) REFERENCES Tour(id) ON DELETE CASCADE,
     INDEX idx_user (userId),
     INDEX idx_tour (tourId)
+);
+
+-- Bảng TourService (Included/Excluded Services)
+CREATE TABLE TourService (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tourId INT NOT NULL,
+    item TEXT NOT NULL,
+    type ENUM('included', 'excluded') NOT NULL,
+    isImportant BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (tourId) REFERENCES Tour(id) ON DELETE CASCADE
 );
 
 -- Bảng Comment

@@ -23,6 +23,7 @@ import CategoryRedirect from "./pages/CategoryRedirect";
 import SchedulePage from "./pages/SchedulePage";
 import GuidePage from "./pages/GuidePage";
 import TourDetailPage from "./pages/TourDetailPage";
+import BookingProfilePage from "./pages/BookingProfilePage";
 import PrivateRoute from "../guards/PrivateRoute";
 import PublicRoute from "../guards/PublicRoute";
 
@@ -161,6 +162,17 @@ function App() {
               <MainLayout>
                 <TourDetailPage />
               </MainLayout>
+            }
+          />
+
+          <Route
+            path="/bookings/my-bookings"
+            element={
+              <PrivateRoute>
+                <MainLayout>
+                  <BookingProfilePage />
+                </MainLayout>
+              </PrivateRoute>
             }
           />
 

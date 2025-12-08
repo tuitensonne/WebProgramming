@@ -404,6 +404,9 @@ const InternationalToursPage = () => {
         if (filters.duration) {
           params.duration = filters.duration;
         }
+        if (filters.price) {
+          params.price = filters.price;
+        }
         if (filters.sortBy) {
           params.sortBy = filters.sortBy;
         }
@@ -470,7 +473,7 @@ const InternationalToursPage = () => {
     };
 
     fetchTours();
-  }, [page, filters.sortBy, filters.location, filters.duration]);
+  }, [page, filters.sortBy, filters.location, filters.duration, filters.price]);
 
   useEffect(() => {
     const fetchFilterOptions = async () => {

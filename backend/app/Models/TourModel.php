@@ -283,7 +283,7 @@ class TourModel
      * @param string|null $duration Thời gian (định dạng: 7N6) từ shortDescription (optional)
      * @return array|null Danh sách tour hoặc null nếu lỗi
      */
-    public function getAllTours(?int $categoryId = null, int $limit = 20, int $offset = 0, ?string $tourType = null, ?string $sortBy = null, ?string $location = null, ?string $duration = null): ?array
+    public function getAllTours(?int $categoryId = null, int $limit = 20, int $offset = 0, ?string $tourType = null, ?string $sortBy = null, ?string $location = null, ?string $duration = null, ?string $price = null): ?array
     {
         $query = "";
         try {
@@ -370,12 +370,27 @@ class TourModel
                 } else {
                     // Handle "Trên 1 tuần" or similar
                     if (stripos($duration, 'tuần') !== false || stripos($duration, 'week') !== false || stripos($duration, 'Trên 1 tuần') !== false) {
-                        $query .= " AND (t.durationDays >= 7 OR (t.durationDays IS NULL AND t.durationNights >= 6)) ";
+                        $query .= " AND (t.durationDays >= 7 OR (t.durationDays IS NULL && t.durationNights >= 6)) ";
                     }
                 }
             }
 
             $query .= " GROUP BY t.id, t.name, t.shortDescription, t.thumbnailUrl, t.tourType, t.durationDays, t.durationNights, t.availableSeat";
+
+            // Filter by price range after GROUP BY using HAVING: 0-20 (triệu), 20-40, 40-60, 60+
+            if ($price) {
+                $query .= " HAVING ";
+                $priceParts = explode('-', $price);
+                if (count($priceParts) == 2) {
+                    $minPrice = (int)$priceParts[0] * 1000000;
+                    $maxPrice = (int)$priceParts[1] * 1000000;
+                    $query .= "MAX(ti.price) BETWEEN :minPrice AND :maxPrice ";
+                } elseif (strpos($price, '+') !== false) {
+                    // 60+ means >= 60 million
+                    $minPrice = 60 * 1000000;
+                    $query .= "MAX(ti.price) >= :minPrice ";
+                }
+            }
 
             // Apply sorting - support price asc/desc and rating (fallback to bookings)
             switch ($sortBy) {
@@ -417,6 +432,20 @@ class TourModel
             if ($duration && $durationDays !== null && $durationNights !== null) {
                 $stmt->bindParam(':durationDays', $durationDays, PDO::PARAM_INT);
                 $stmt->bindParam(':durationNights', $durationNights, PDO::PARAM_INT);
+            }
+
+            // Bind price parameters
+            if ($price) {
+                $priceParts = explode('-', $price);
+                if (count($priceParts) == 2) {
+                    $minPrice = (int)$priceParts[0] * 1000000;
+                    $maxPrice = (int)$priceParts[1] * 1000000;
+                    $stmt->bindParam(':minPrice', $minPrice, PDO::PARAM_INT);
+                    $stmt->bindParam(':maxPrice', $maxPrice, PDO::PARAM_INT);
+                } elseif (strpos($price, '+') !== false) {
+                    $minPrice = 60 * 1000000;
+                    $stmt->bindParam(':minPrice', $minPrice, PDO::PARAM_INT);
+                }
             }
 
             $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
@@ -485,17 +514,17 @@ class TourModel
                     t.id,
                     t.name,
                     t.shortDescription,
+                    t.overview,
+                    t.highlights,
                     t.postId,
                     t.thumbnailUrl,
                     t.tourType,
-                    t.categoryId,
-                    c.tourCategoryName AS categoryName,
-                        COUNT(b.tourId) AS totalBookings,
-                        t.durationDays,
-                        t.durationNights,
-                        t.availableSeat,
-                        ti.price AS originalPrice,
-                        CASE 
+                    COUNT(DISTINCT b.userId) AS totalBookings,
+                    t.durationDays,
+                    t.durationNights,
+                    t.availableSeat,
+                    MAX(ti.price) AS originalPrice,
+                    CASE 
                         WHEN t.availableSeat IS NOT NULL 
                         THEN CONCAT(t.availableSeat, ' Người')
                         ELSE NULL
@@ -505,17 +534,20 @@ class TourModel
                         THEN CONCAT(t.durationDays, ' Ngày ', t.durationNights, ' Đêm')
                         ELSE '3 Ngày 2 Đêm'
                     END AS duration,
-                    CASE 
+                    MAX(CASE 
                         WHEN ti.departureDate IS NOT NULL 
                         THEN DATE_FORMAT(ti.departureDate, '%d/%m/%Y')
                         ELSE NULL
-                    END AS departureDate
+                    END) AS departureDate,
+                    GROUP_CONCAT(DISTINCT tcr_type.categoryId) AS categoryIds
                 FROM Tour t
-                INNER JOIN TourCategory c ON t.categoryId = c.id
+                LEFT JOIN TourCategoryRel tcr_type ON t.id = tcr_type.tourId AND tcr_type.categoryId >= 3
                 LEFT JOIN Booking b ON t.id = b.tourId
                 LEFT JOIN (
                     SELECT 
-                        ti1.tourId, ti1.price, ti1.departureDate
+                        ti1.tourId, 
+                        ti1.price,
+                        ti1.departureDate
                     FROM TourItinerary ti1
                     INNER JOIN (
                         SELECT tourId, MIN(departureDate) as minDate
@@ -539,7 +571,13 @@ class TourModel
 
                 // Add fallback values for frontend compatibility
                 $row['location'] = $row['name'] ?? 'Tour du lịch';
-                $row['icon'] = $this->getIconByCategory($row['categoryId']);
+                
+                // Get icon from tour type category (if exists)
+                $categoryIds = $row['categoryIds'] ? explode(',', $row['categoryIds']) : [];
+                $tourTypeIcon = !empty($categoryIds[0]) ? $this->getIconByCategory((int)$categoryIds[0]) : '🎫';
+                $row['icon'] = $tourTypeIcon;
+                $row['categoryIds'] = $categoryIds;
+                
                 // Price, oldPrice, guests, duration come from DB now
                 $row['rating'] = $row['rating'] ?? 0;
                 $row['reviews'] = $row['reviews'] ?? 0;
@@ -561,6 +599,21 @@ class TourModel
                 }
                 $row['image'] = $row['image'] ?? ($row['thumbnailUrl'] ?? '');
                 $row['liked'] = false;
+                
+                // Parse overview and highlights if they are JSON
+                if (!empty($row['overview']) && is_string($row['overview'])) {
+                    $overview = json_decode($row['overview'], true);
+                    $row['overview'] = is_array($overview) ? $overview : [$row['overview']];
+                } else {
+                    $row['overview'] = [];
+                }
+                
+                if (!empty($row['highlights']) && is_string($row['highlights'])) {
+                    $highlights = json_decode($row['highlights'], true);
+                    $row['highlights'] = is_array($highlights) ? $highlights : [$row['highlights']];
+                } else {
+                    $row['highlights'] = [];
+                }
             }
             
             return $row;

@@ -419,6 +419,9 @@ const TourTypesPage = () => {
         if (filters.duration) {
           params.duration = filters.duration;
         }
+        if (filters.price) {
+          params.price = filters.price;
+        }
         if (filters.sortBy) {
           params.sortBy = filters.sortBy;
         }
@@ -484,7 +487,7 @@ const TourTypesPage = () => {
     };
 
     fetchTours();
-  }, [page, filters.sortBy, filters.location, filters.duration]);
+  }, [page, filters.sortBy, filters.location, filters.duration, filters.category, filters.price]);
 
 
   useEffect(() => {
@@ -542,6 +545,15 @@ const TourTypesPage = () => {
             ))}
           </FilterSelect>
 
+          <FilterSelect 
+            value={filters.category}
+            onChange={(e) => handleFilterChange('category', e.target.value)}
+          >
+            <option value="">Kiểu tour</option>
+            {filterOptions.categories.map((cat, idx) => (
+              <option key={idx} value={cat.id}>{cat.name}</option>
+            ))}
+          </FilterSelect>
 
           <FilterSelect 
             value={filters.price}

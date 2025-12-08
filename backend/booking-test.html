@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        h2 {
+            color: #666;
+            border-bottom: 2px solid #ff6b35;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: Arial;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        button {
+            background: #ff6b35;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #e55a1f;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .info {
+            background: #e8f4f8;
+            padding: 10px;
+            border-left: 4px solid #0288d1;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Booking System - API Test</h1>
+
+    <div class="container">
+        <h2>1. Kiểm tra kết nối Backend</h2>
+        <div class="info">
+            <strong>Endpoint:</strong> GET /tours/1<br>
+            <strong>Mô tả:</strong> Kiểm tra tour detail có dữ liệu booking
+        </div>
+        <button onclick="testTourDetail()">Kiểm tra Tour Detail</button>
+        <div id="tourResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>2. Tạo Booking Mới</h2>
+        <div class="info">
+            <strong>Endpoint:</strong> POST /bookings<br>
+            <strong>Yêu cầu:</strong> Authorization header với token
+        </div>
+        
+        <div class="form-group">
+            <label>Token (từ localStorage)</label>
+            <input type="text" id="token" placeholder="Dán token từ localStorage['token']">
+        </div>
+
+        <div class="grid">
+            <div>
+                <div class="form-group">
+                    <label>Tour ID</label>
+                    <input type="number" id="tourId" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Ngày xuất phát</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="form-group">
+                    <label>Ngày về</label>
+                    <input type="date" id="endDate">
+                </div>
+                <div class="form-group">
+                    <label>Người lớn</label>
+                    <input type="number" id="adults" value="1" min="0">
+                </div>
+            </div>
+
+            <div>
+                <div class="form-group">
+                    <label>Trẻ em (6-12 tuổi)</label>
+                    <input type="number" id="children" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Em bé (dưới 6 tuổi)</label>
+                    <input type="number" id="babies" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Giá tiền (VNĐ)</label>
+                    <input type="number" id="totalPrice" value="3500000">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Họ và tên</label>
+            <input type="text" id="fullName" placeholder="Nguyễn Văn A">
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email" placeholder="email@example.com">
+        </div>
+        <div class="form-group">
+            <label>Số điện thoại</label>
+            <input type="tel" id="phone" placeholder="0912345678">
+        </div>
+        <div class="form-group">
+            <label>Địa chỉ</label>
+            <textarea id="address" placeholder="Nhập địa chỉ"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Ghi chú</label>
+            <textarea id="note" placeholder="Ghi chú thêm (tùy chọn)"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Phương thức thanh toán</label>
+            <select id="paymentMethod">
+                <option value="card">Thẻ tín dụng</option>
+                <option value="bank">Chuyển khoản</option>
+                <option value="cash">Thanh toán tại chỗ</option>
+            </select>
+        </div>
+
+        <button onclick="createBooking()">Tạo Booking</button>
+        <div id="bookingResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>3. Lấy Booking của User</h2>
+        <div class="info">
+            <strong>Endpoint:</strong> GET /bookings/my-bookings<br>
+            <strong>Yêu cầu:</strong> Authorization header với token
+        </div>
+        
+        <div class="form-group">
+            <label>Token</label>
+            <input type="text" id="token2" placeholder="Dán token từ localStorage['token']">
+        </div>
+        
+        <button onclick="getUserBookings()">Lấy danh sách booking</button>
+        <div id="bookingsResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>4. Kiểm tra Database</h2>
+        <div class="info">
+            <strong>Kiểm tra:</strong> Xem số record trong Booking table
+        </div>
+        
+        <div class="form-group">
+            <label>Token (admin)</label>
+            <input type="text" id="adminToken" placeholder="Dán admin token">
+        </div>
+        
+        <button onclick="getAllBookings()">Xem tất cả booking (Admin)</button>
+        <div id="allBookingsResult"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000';
+
+        function testTourDetail() {
+            const resultDiv = document.getElementById('tourResult');
+            resultDiv.innerHTML = '<div style="color:#666">Đang tải...</div>';
+
+            fetch(`${API_URL}/tours/1`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const tour = data.data;
+                        let html = '<div class="success">✓ Kết nối backend thành công!</div>';
+                        html += '<pre>' + JSON.stringify(tour, null, 2) + '</pre>';
+                        resultDiv.innerHTML = html;
+                    } else {
+                        resultDiv.innerHTML = '<div class="error">✗ Lỗi: ' + data.message + '</div>';
+                    }
+                })
+                .catch(err => {
+                    resultDiv.innerHTML = '<div class="error">✗ Lỗi kết nối: ' + err.message + '</div>';
+                });
+        }
+
+        function createBooking() {
+            const token = document.getElementById('token').value;
+            if (!token) {
+                alert('Vui lòng nhập token');
+                return;
+            }
+
+            const adults = parseInt(document.getElementById('adults').value) || 0;
+            const children = parseInt(document.getElementById('children').value) || 0;
+            const babies = parseInt(document.getElementById('babies').value) || 0;
+
+            const bookingData = {
+                tourId: parseInt(document.getElementById('tourId').value),
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                adults,
+                children,
+                babies,
+                totalPeople: adults + children + babies,
+                totalPrice: parseFloat(document.getElementById('totalPrice').value),
+                fullName: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                note: document.getElementById('note').value,
+                paymentMethod: document.getElementById('paymentMethod').value
+            };
+
+            const resultDiv = document.getElementById('bookingResult');
+            resultDiv.innerHTML = '<div style="color:#666">Đang tạo...</div>';
+
+            fetch(`${API_URL}/bookings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(bookingData)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    resultDiv.innerHTML = '<div class="success">✓ Tạo booking thành công!</div><pre>' + JSON.stringify(data.data, null, 2) + '</pre>';
+                } else {
+                    resultDiv.innerHTML = '<div class="error">✗ Lỗi: ' + data.message + '</div>';
+                }
+            })
+            .catch(err => {
+                resultDiv.innerHTML = '<div class="error">✗ Lỗi: ' + err.message + '</div>';
+            });
+        }
+
+        function getUserBookings() {
+            const token = document.getElementById('token2').value;
+            if (!token) {
+                alert('Vui lòng nhập token');
+                return;
+            }
+
+            const resultDiv = document.getElementById('bookingsResult');
+            resultDiv.innerHTML = '<div style="color:#666">Đang tải...</div>';
+
+            fetch(`${API_URL}/bookings/my-bookings`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const bookings = data.data || [];
+                    let html = '<div class="success">✓ Tải danh sách thành công! (' + bookings.length + ' booking)</div>';
+                    html += '<pre>' + JSON.stringify(bookings, null, 2) + '</pre>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = '<div class="error">✗ Lỗi: ' + data.message + '</div>';
+                }
+            })
+            .catch(err => {
+                resultDiv.innerHTML = '<div class="error">✗ Lỗi: ' + err.message + '</div>';
+            });
+        }
+
+        function getAllBookings() {
+            const token = document.getElementById('adminToken').value;
+            if (!token) {
+                alert('Vui lòng nhập admin token');
+                return;
+            }
+
+            const resultDiv = document.getElementById('allBookingsResult');
+            resultDiv.innerHTML = '<div style="color:#666">Đang tải...</div>';
+
+            fetch(`${API_URL}/admin/bookings`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const bookings = data.data || [];
+                    let html = '<div class="success">✓ Tổng số booking: ' + bookings.length + '</div>';
+                    html += '<pre>' + JSON.stringify(bookings, null, 2) + '</pre>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = '<div class="error">✗ Lỗi: ' + data.message + '</div>';
+                }
+            })
+            .catch(err => {
+                resultDiv.innerHTML = '<div class="error">✗ Lỗi: ' + err.message + '</div>';
+            });
+        }
+
+        // Auto set dates on load
+        window.addEventListener('load', () => {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            document.getElementById('startDate').valueAsDate = today;
+            document.getElementById('endDate').valueAsDate = tomorrow;
+        });
+    </script>
+</body>
+</html>

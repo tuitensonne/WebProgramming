@@ -13,6 +13,7 @@ import FooterAdmin from "./pages/FooterAdmin";
 import ContactPage from "./pages/ContactAdmin";
 import AboutUsAdmin from "./pages/AboutUsAdmin";
 import FaqAdmin from "./pages/FaqAdmin";
+import BookingManagement from "./pages/BookingManagement";
 
 const adminRouter = createBrowserRouter([
   {
@@ -21,6 +22,7 @@ const adminRouter = createBrowserRouter([
     children: [
       { index: true, element: <LandingPageAdmin /> },
       { path: "users", element: <AdminUserManagement /> },
+      { path: "bookings", element: <BookingManagement /> },
       { path: "footer", element: <FooterAdmin /> },
       { path: "landing-page", element: <LandingPageAdmin /> },
       { path: "contact", element: <ContactPage /> },

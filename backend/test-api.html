@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Tour Detail API</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .success { color: green; }
+    .error { color: red; }
+    pre { background: #f5f5f5; padding: 10px; overflow: auto; max-height: 400px; }
+  </style>
+</head>
+<body>
+  <h1>Tour Detail API Test</h1>
+  <div id="result"></div>
+
+  <script>
+    async function testAPI() {
+      const resultDiv = document.getElementById('result');
+      try {
+        const response = await fetch('http://127.0.0.1:8000/tours/1');
+        const data = await response.json();
+        
+        if (data.success) {
+          resultDiv.innerHTML = `
+            <p class="success">✓ API Connected Successfully!</p>
+            <h3>Tour Data:</h3>
+            <p><strong>Name:</strong> ${data.data.name}</p>
+            <p><strong>Price:</strong> ${data.data.price ? data.data.price.toLocaleString('vi-VN') + ' VNĐ' : 'N/A'}</p>
+            <p><strong>Duration:</strong> ${data.data.duration}</p>
+            <p><strong>Address:</strong> ${data.data.address}</p>
+            <p><strong>Overview:</strong> ${data.data.overview ? data.data.overview.length + ' items' : '0 items'}</p>
+            <p><strong>Highlights:</strong> ${data.data.highlights ? data.data.highlights.length + ' items' : '0 items'}</p>
+            <p><strong>Included Services:</strong> ${data.data.includedServices ? data.data.includedServices.length + ' items' : '0 items'}</p>
+            <p><strong>Excluded Services:</strong> ${data.data.excludedServices ? data.data.excludedServices.length + ' items' : '0 items'}</p>
+            <h3>Full Response:</h3>
+            <pre>${JSON.stringify(data.data, null, 2)}</pre>
+          `;
+        } else {
+          resultDiv.innerHTML = `<p class="error">✗ API Error: ${data.message}</p>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<p class="error">✗ Connection Error: ${err.message}</p>`;
+      }
+    }
+    
+    testAPI();
+  </script>
+</body>
+</html>

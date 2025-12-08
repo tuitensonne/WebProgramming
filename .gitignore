@@ -1,0 +1,28 @@
+# Root .gitignore for repository
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+
+# PHP vendor
+backend/vendor/
+
+# Environment files
+.env
+backend/.env
+frontend/.env
+
+# Uploads / build artifacts
+backend/Storage/uploads/
+public/Storage/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Composer and npm lockfiles can be tracked, keep them (do not ignore)

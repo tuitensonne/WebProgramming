@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { Link } from 'react-router-dom';
 import { 
@@ -7,12 +8,15 @@ import {
   IconStar,
   IconClock,
   IconUsers,
-  IconWorld,
-  IconBookmark,
-  IconShare,
+  IconMapPin,
   IconCheck,
-  IconX
+  IconX,
+  IconBookmark,
+  IconShare
 } from '@tabler/icons-react';
+import api from '../../api/api';
+import BookingForm from '../components/BookingForm';
+import PaymentModal from '../components/PaymentModal';
 
 const PageWrapper = styled.div`
   background-color: #f5f5f5;
@@ -22,11 +26,6 @@ const PageWrapper = styled.div`
 const BreadcrumbWrapper = styled.div`
   background: #f5f5f5;
   padding: 16px 60px;
-
-  @media (max-width: 1200px) {
-    padding: 16px 40px;
-  }
-
   @media (max-width: 768px) {
     padding: 12px 20px;
   }
@@ -50,11 +49,7 @@ const BreadcrumbLink = styled(Link)`
   align-items: center;
   color: #666;
   text-decoration: none;
-  transition: color 0.2s;
-
-  &:hover {
-    color: #0d6efd;
-  }
+  &:hover { color: #0d6efd; }
 `;
 
 const BreadcrumbCurrent = styled.span`
@@ -62,137 +57,56 @@ const BreadcrumbCurrent = styled.span`
   font-weight: 500;
 `;
 
-const Separator = styled(IconChevronRight)`
-  color: #999;
-  flex-shrink: 0;
-`;
-
 const Container = styled.div`
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 60px 40px;
-
-  @media (max-width: 1200px) {
-    padding: 0 40px 40px;
-  }
-
   @media (max-width: 768px) {
     padding: 0 20px 30px;
   }
 `;
 
-const TourHeader = styled.div`
-  padding: 24px 0;
-  margin-bottom: 24px;
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: 16px;
+  color: #666;
+`;
+
+const ErrorContainer = styled.div`
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  color: #856404;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
 `;
 
 const TourTitle = styled.h1`
   font-size: 28px;
   font-weight: 700;
   color: #333;
-  margin-bottom: 16px;
+  margin: 24px 0 16px;
   line-height: 1.4;
-`;
-
-const HeaderMeta = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const MetaLeft = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 16px;
-`;
-
-const Rating = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`;
-
-const Stars = styled.div`
-  display: flex;
-  gap: 2px;
-  color: #ffc107;
-`;
-
-const RatingText = styled.span`
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-`;
-
-const Reviews = styled.span`
-  font-size: 14px;
-  color: #666;
-`;
-
-const Saved = styled.span`
-  font-size: 14px;
-  color: #666;
-`;
-
-const ActionButtons = styled.div`
-  display: flex;
-  gap: 12px;
-`;
-
-const ActionButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: #0d6efd;
-    color: #0d6efd;
-  }
-`;
-
-const MainContent = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 24px;
-  align-items: start;
-
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const LeftColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
 `;
 
 const ImageGallery = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr;
-  grid-template-rows: repeat(2, 200px);
-  gap: 8px;
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
-  margin-bottom: 40px;
+  gap: 16px;
+  margin: 24px 0;
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const MainImage = styled.div`
-  grid-row: 1 / 3;
-  position: relative;
+  background: #ddd;
+  border-radius: 12px;
   overflow: hidden;
-
+  height: 400px;
   img {
     width: 100%;
     height: 100%;
@@ -200,44 +114,35 @@ const MainImage = styled.div`
   }
 `;
 
-const SmallImage = styled.div`
-  position: relative;
-  overflow: hidden;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+const ThumbnailGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  @media (max-width: 768px) {
+    display: none;
   }
 `;
 
-const SeeAllPhotos = styled.button`
-  position: absolute;
-  bottom: 16px;
-  right: 16px;
-  padding: 10px 20px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  border: none;
+const Thumbnail = styled.div`
+  background: #ddd;
   border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
+  overflow: hidden;
+  height: 92px;
   cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: rgba(0, 0, 0, 0.9);
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 `;
 
 const InfoGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 32px;
+  gap: 20px;
   padding: 24px 0;
   border-bottom: 1px solid #e0e0e0;
   margin-bottom: 32px;
-
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -250,630 +155,352 @@ const InfoItem = styled.div`
 `;
 
 const InfoLabel = styled.span`
-  font-size: 12px;
+  font-size: 13px;
   color: #999;
-  font-weight: 500;
   text-transform: uppercase;
+  font-weight: 600;
 `;
 
 const InfoValue = styled.span`
-  font-size: 14px;
+  font-size: 16px;
   color: #333;
   font-weight: 600;
 `;
 
-const Section = styled.div`
-  padding: 0 0 32px 0;
-  margin-bottom: 32px;
-  border-bottom: 1px solid #e0e0e0;
-
-  &:last-of-type {
-    border-bottom: none;
-    margin-bottom: 0;
-  }
+const OverviewSection = styled.div`
+  margin-bottom: 40px;
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: #333;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 `;
 
-const Description = styled.p`
-  font-size: 15px;
+const OverviewText = styled.p`
   color: #666;
-  line-height: 1.8;
-  margin-bottom: 24px;
+  line-height: 1.6;
+  margin-bottom: 12px;
 `;
 
 const HighlightsList = styled.ul`
   list-style: none;
   padding: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 `;
 
 const HighlightItem = styled.li`
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-size: 15px;
+  align-items: center;
+  gap: 12px;
   color: #666;
-  line-height: 1.6;
-
-  &::before {
-    content: "•";
-    color: #0d6efd;
-    font-weight: 700;
-    font-size: 20px;
+  margin-bottom: 12px;
+  
+  svg {
+    color: #ff6b35;
+    flex-shrink: 0;
   }
 `;
 
-const IncludedGrid = styled.div`
+const ServicesGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-bottom: 40px;
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
 `;
 
-const IncludedItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  color: ${props => props.$excluded ? '#999' : '#333'};
+const ServiceList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
 `;
 
-const BookingCard = styled.div`
-  background: white;
-  padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 24px;
-  max-height: calc(100vh - 48px);
-  overflow-y: auto;
-
-  /* Custom scrollbar */
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: #999;
-  }
-`;
-
-const PriceSection = styled.div`
-  margin-bottom: 24px;
-`;
-
-const PriceLabel = styled.div`
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 4px;
-`;
-
-const Price = styled.div`
-  font-size: 28px;
-  font-weight: 700;
-  color: #333;
-`;
-
-const DateSelector = styled.div`
-  margin-bottom: 20px;
-`;
-
-const Label = styled.label`
-  display: block;
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 8px;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: all 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
-  }
-`;
-
-const TicketsSection = styled.div`
-  margin-bottom: 24px;
-`;
-
-const TicketItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
-
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const TicketInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-const TicketType = styled.span`
-  font-size: 14px;
-  color: #333;
-  font-weight: 500;
-`;
-
-const TicketPrice = styled.span`
-  font-size: 13px;
-  color: #666;
-`;
-
-const QuantityControl = styled.div`
+const ServiceItem = styled.li`
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 12px 0;
+  color: #666;
+  
+  svg {
+    color: ${props => props.$included ? '#22c55e' : '#ef4444'};
+    flex-shrink: 0;
+  }
 `;
 
-const QuantityButton = styled.button`
-  width: 32px;
-  height: 32px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
+const CommentsSection = styled.div`
+  margin: 40px 0;
+`;
+
+const CommentsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const CommentCard = styled.div`
   background: white;
-  color: #666;
-  font-size: 18px;
-  cursor: pointer;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+`;
+
+const CommentAuthor = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: #0d6efd;
-    color: #0d6efd;
-  }
-
-  &:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
+  gap: 12px;
+  margin-bottom: 12px;
 `;
 
-const Quantity = styled.span`
-  font-size: 16px;
+const CommentName = styled.span`
   font-weight: 600;
   color: #333;
-  min-width: 20px;
-  text-align: center;
 `;
 
-const ExtraSection = styled.div`
-  margin-bottom: 24px;
-`;
-
-const ExtraItem = styled.div`
+const CommentRating = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-
-  label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-    color: #333;
-    cursor: pointer;
-  }
-
-  input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-  }
-`;
-
-const ExtraPrice = styled.span`
+  gap: 4px;
+  color: #ffc107;
   font-size: 14px;
-  color: #666;
-  font-weight: 600;
 `;
 
-const TotalSection = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 0;
-  border-top: 2px solid #f0f0f0;
+const CommentText = styled.p`
+  color: #666;
+  line-height: 1.6;
+  margin: 0;
+`;
+
+const PriceBox = styled.div`
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  position: sticky;
+  top: 100px;
+  
+  @media (max-width: 768px) {
+    position: static;
+  }
+`;
+
+const Price = styled.div`
+  font-size: 32px;
+  font-weight: 700;
+  color: #ff6b35;
   margin-bottom: 20px;
 `;
 
-const TotalLabel = styled.span`
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-`;
-
-const TotalPrice = styled.span`
-  font-size: 24px;
-  font-weight: 700;
-  color: #ff6b6b;
-`;
-
-const BookButton = styled.button`
+const BookingButton = styled.button`
   width: 100%;
-  padding: 16px;
-  background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+  padding: 14px;
+  background: #ff6b35;
   color: white;
   border: none;
   border-radius: 8px;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(255, 107, 107, 0.3);
-  }
-`;
-
-const ItinerarySection = styled.div`
-  padding: 0 0 32px 0;
-  margin-bottom: 32px;
-  border-bottom: 1px solid #e0e0e0;
-`;
-
-const ItineraryTitle = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 24px;
-`;
-
-const DayNumber = styled.div`
-  width: 32px;
-  height: 32px;
-  background: #ff6b6b;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 700;
-  flex-shrink: 0;
-`;
-
-const DayTitle = styled.h3`
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-`;
-
-const DayDescription = styled.p`
-  font-size: 14px;
-  color: #666;
-  line-height: 1.8;
-  margin: 0 0 0 40px;
-`;
-
-const MapSection = styled.div`
-  padding: 0 0 32px 0;
-  margin-bottom: 32px;
-  border-bottom: 1px solid #e0e0e0;
-`;
-
-const MapPlaceholder = styled.div`
-  width: 100%;
-  height: 400px;
-  background: #f0f0f0;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-  font-size: 16px;
-  margin-top: 16px;
-`;
-
-const CalendarSection = styled.div`
-  padding: 0 0 32px 0;
-  margin-bottom: 32px;
-  border-bottom: 1px solid #e0e0e0;
-`;
-
-const CalendarGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-  margin-top: 16px;
-`;
-
-const CalendarDay = styled.div`
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: ${props => props.$available ? '#333' : '#ccc'};
-  background: ${props => props.$selected ? '#ff6b6b' : props.$available ? 'white' : '#f9f9f9'};
-  color: ${props => props.$selected ? 'white' : props.$available ? '#333' : '#ccc'};
-  border-radius: 8px;
-  cursor: ${props => props.$available ? 'pointer' : 'not-allowed'};
-  transition: all 0.2s;
-  border: 1px solid ${props => props.$available ? '#e0e0e0' : '#f0f0f0'};
-
-  &:hover {
-    ${props => props.$available && `
-      background: #fff5f5;
-      border-color: #ff6b6b;
-    `}
-  }
-`;
-
-const FAQSection = styled.div`
-  padding: 0 0 32px 0;
-  margin-bottom: 32px;
-  border-bottom: 1px solid #e0e0e0;
-`;
-
-const FAQItem = styled.div`
-  margin-bottom: 20px;
+  transition: all 0.3s;
   
-  &:last-child {
-    margin-bottom: 0;
+  &:hover {
+    background: #e55a1f;
+    transform: translateY(-2px);
   }
 `;
 
-const FAQQuestion = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 8px;
-`;
-
-const FAQAnswer = styled.p`
-  font-size: 14px;
-  color: #666;
-  line-height: 1.8;
-  margin: 0 0 0 32px;
-`;
-
-const ReviewsSection = styled.div`
-  padding: 0 0 32px 0;
-  margin-bottom: 32px;
-  border-bottom: 1px solid #e0e0e0;
-`;
-
-const ReviewStats = styled.div`
+const MainContent = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 32px;
-
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-`;
-
-const StatItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const StatLabel = styled.span`
-  font-size: 13px;
-  color: #999;
-`;
-
-const StatValue = styled.span`
-  font-size: 20px;
-  font-weight: 700;
-  color: #333;
-`;
-
-const ReviewCard = styled.div`
-  padding: 20px 0;
-  border-bottom: 1px solid #f0f0f0;
-
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const ReviewHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-`;
-
-const ReviewAuthor = styled.span`
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
-`;
-
-const ReviewDate = styled.span`
-  font-size: 13px;
-  color: #999;
-`;
-
-const ReviewText = styled.p`
-  font-size: 14px;
-  color: #666;
-  line-height: 1.8;
-  margin: 0 0 12px;
-`;
-
-const ReviewImages = styled.div`
-  display: flex;
-  gap: 8px;
-`;
-
-const ReviewImage = styled.img`
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 8px;
-`;
-
-const SuggestionsSection = styled.div`
-  padding: 40px 0 0;
-`;
-
-const SuggestionsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-top: 24px;
-
+  grid-template-columns: 1fr 350px;
+  gap: 32px;
+  margin-bottom: 40px;
+  
   @media (max-width: 1024px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (max-width: 640px) {
     grid-template-columns: 1fr;
   }
 `;
 
-const SuggestionCard = styled.div`
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  cursor: pointer;
-  transition: all 0.3s;
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  }
-`;
-
-const SuggestionImage = styled.img`
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-`;
-
-const SuggestionContent = styled.div`
-  padding: 16px;
-`;
-
-const SuggestionTitle = styled.h4`
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 8px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-`;
-
-const SuggestionMeta = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const SuggestionDuration = styled.span`
-  font-size: 13px;
-  color: #666;
-`;
-
-const SuggestionPrice = styled.span`
-  font-size: 16px;
-  font-weight: 700;
-  color: #ff6b6b;
-`;
-
 const TourDetailPage = () => {
-  const [tickets, setTickets] = useState({
-    adult: 3,
-    youth: 2,
-    children: 4
-  });
+  const { id } = useParams();
+  const navigate = useNavigate();
+  
+  const [tour, setTour] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [mainImage, setMainImage] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [bookingData, setBookingData] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
 
-  const [extras, setExtras] = useState({
-    servicePerBooking: false,
-    servicePerPerson: false
-  });
+  useEffect(() => {
+    const fetchTourDetail = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get(`/tours/${id}`);
+        const tourData = response.data?.data;
+        
+        if (!tourData) {
+          setError('Tour not found');
+          return;
+        }
+        
+        setTour(tourData);
+        setMainImage(tourData.thumbnailUrl);
+      } catch (err) {
+        console.error('Error fetching tour:', err);
+        setError(err.response?.data?.message || 'Failed to load tour details');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const ticketPrices = {
-    adult: 262.00,
-    youth: 188.00,
-    children: 80.00
-  };
+    if (id) {
+      fetchTourDetail();
+    }
+  }, [id]);
 
-  const extraPrices = {
-    servicePerBooking: 40,
-    servicePerPerson: 40
-  };
-
-  const updateQuantity = (type, delta) => {
-    setTickets(prev => ({
-      ...prev,
-      [type]: Math.max(0, prev[type] + delta)
-    }));
-  };
-
-  const toggleExtra = (key) => {
-    setExtras(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
-
-  const calculateTotal = () => {
-    let total = 0;
-    total += tickets.adult * ticketPrices.adult;
-    total += tickets.youth * ticketPrices.youth;
-    total += tickets.children * ticketPrices.children;
+  useEffect(() => {
+    // Fetch user info if logged in
+    const fetchUserInfo = async () => {
+      try {
+        const response = await api.get('/users/profile');
+        if (response.data?.data) {
+          setUserInfo(response.data.data);
+        }
+      } catch (err) {
+        // User not logged in, will show form to enter info
+      }
+    };
     
-    if (extras.servicePerBooking) total += extraPrices.servicePerBooking;
-    if (extras.servicePerPerson) {
-      const totalPeople = tickets.adult + tickets.youth + tickets.children;
-      total += totalPeople * extraPrices.servicePerPerson;
+    fetchUserInfo();
+  }, []);
+
+  const handleBooking = (data) => {
+    // Check if user is logged in - REQUIRED for booking
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      const shouldLogin = window.confirm('Bạn cần đăng nhập để đặt tour. Bạn có muốn đăng nhập ngay bây giờ không?');
+      if (shouldLogin) {
+        navigate('/login');
+      }
+      return;
     }
     
-    return total.toFixed(2);
+    if (token && userInfo) {
+      // Pre-fill with user info
+      setBookingData({ ...data, tourId: tour.id, tourName: tour.name });
+      setUserInfo({
+        fullName: userInfo.fullName || '',
+        email: userInfo.email || '',
+        phone: userInfo.phone || '',
+        address: userInfo.address || ''
+      });
+    } else {
+      // User has token but userInfo not loaded yet - wait a bit or show form
+      setBookingData({ ...data, tourId: tour.id, tourName: tour.name });
+      setUserInfo({
+        fullName: '',
+        email: '',
+        phone: '',
+        address: '',
+        note: ''
+      });
+    }
+    
+    setShowPaymentModal(true);
   };
+
+  const handlePaymentSuccess = async (paymentInfo) => {
+    try {
+      const bookingPayload = {
+        tourId: bookingData.tourId,
+        numberOfAdult: bookingData.adults || 0,
+        numberOfChild: bookingData.children || 0,
+        status: 'pending'
+      };
+
+      console.log('Sending booking payload:', bookingPayload);
+
+      const response = await api.post('/bookings', bookingPayload);
+      
+      console.log('Booking response:', response);
+      console.log('Response status:', response.status);
+      console.log('Response data:', response.data);
+
+      // Check if request was successful (status 200-299)
+      if (response.status >= 200 && response.status < 300) {
+        // Check if backend indicates success
+        if (response.data?.success !== false) {
+          // Chuyển đến trang profile với section quản lý tour và timestamp để force refresh
+          navigate(`/profile?section=tour-manage&refresh=${Date.now()}`);
+          return;
+        }
+      }
+
+      // If we get here, something went wrong
+      const errorMessage = response.data?.message || response.data?.error || 'Booking failed';
+      console.error('Booking failed - response:', response.data);
+      throw new Error(errorMessage);
+    } catch (err) {
+      console.error('Error creating booking:', err);
+      console.error('Error response:', err.response);
+      console.error('Error response data:', err.response?.data);
+      
+      let errorMessage = 'Có lỗi xảy ra khi đặt tour. Vui lòng thử lại.';
+      
+      if (err.response) {
+        // Server responded with error
+        errorMessage = err.response.data?.message || 
+                      err.response.data?.error || 
+                      `Lỗi từ server: ${err.response.status} ${err.response.statusText}`;
+      } else if (err.request) {
+        // Request was made but no response received
+        errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.';
+      } else if (err.message) {
+        // Error in request setup
+        errorMessage = err.message;
+      }
+      
+      alert(errorMessage);
+      throw err;
+    }
+  };
+
+  if (loading) {
+    return (
+      <PageWrapper>
+        <LoadingContainer>Loading tour details...</LoadingContainer>
+      </PageWrapper>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageWrapper>
+        <Container>
+          <ErrorContainer>{error}</ErrorContainer>
+        </Container>
+      </PageWrapper>
+    );
+  }
+
+  if (!tour) {
+    return (
+      <PageWrapper>
+        <Container>
+          <ErrorContainer>Tour not found</ErrorContainer>
+        </Container>
+      </PageWrapper>
+    );
+  }
+
+  const priceDisplay = tour.price ? new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(tour.price) : 'Liên hệ';
 
   return (
     <PageWrapper>
@@ -882,450 +509,166 @@ const TourDetailPage = () => {
           <BreadcrumbLink to="/">
             <IconHome size={18} />
           </BreadcrumbLink>
-          <Separator size={16} />
+          <IconChevronRight size={16} color="#999" />
           <BreadcrumbLink to="/domestic">
-            Du lịch trong nước
+            Trang chủ
           </BreadcrumbLink>
-          <Separator size={16} />
-          <BreadcrumbCurrent>Tour Hà Nội - Hạ Long - Sapa</BreadcrumbCurrent>
+          <IconChevronRight size={16} color="#999" />
+          <BreadcrumbCurrent>{tour.name}</BreadcrumbCurrent>
         </BreadcrumbContainer>
       </BreadcrumbWrapper>
 
       <Container>
-        <TourHeader>
-          <TourTitle>
-            Tour Hà Nội - Hạ Long - Bãi Đình Trắng An (Ngủ tàu trên Vịnh Hạ Long - một trong 7 Kỳ quan Thiên nhiên mới của thế giới) tour trọn gói đặc sắc nhất năm 2025
-          </TourTitle>
-          <HeaderMeta>
-            <MetaLeft>
-              <Rating>
-                <Stars>
-                  {[...Array(5)].map((_, i) => (
-                    <IconStar key={i} size={16} fill={i < 4 ? "currentColor" : "none"} />
-                  ))}
-                </Stars>
-                <RatingText>4.5</RatingText>
-                <Reviews>(15)</Reviews>
-              </Rating>
-              <Saved>100+ đã đặt</Saved>
-            </MetaLeft>
-            <ActionButtons>
-              <ActionButton>
-                <IconBookmark size={18} />
-                Save
-              </ActionButton>
-              <ActionButton>
-                <IconShare size={18} />
-                Share
-              </ActionButton>
-            </ActionButtons>
-          </HeaderMeta>
-        </TourHeader>
+        <TourTitle>{tour.name}</TourTitle>
 
+        {/* Image Gallery */}
         <ImageGallery>
           <MainImage>
-            <img src="https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?w=800&h=600&fit=crop" alt="Tour main" />
+            <img src={mainImage || tour.image || tour.thumbnailUrl} alt={tour.name} />
           </MainImage>
-          <SmallImage>
-            <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop" alt="Tour 2" />
-          </SmallImage>
-          <SmallImage>
-            <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=300&fit=crop" alt="Tour 3" />
-          </SmallImage>
-          <SeeAllPhotos>See all photos</SeeAllPhotos>
+          <ThumbnailGrid>
+            <Thumbnail onClick={() => setMainImage(tour.image || tour.thumbnailUrl)}>
+              <img src={tour.image || tour.thumbnailUrl} alt="Tour" />
+            </Thumbnail>
+            {/* Additional thumbnails can be added here if more images available */}
+          </ThumbnailGrid>
         </ImageGallery>
 
+        {/* Info Grid */}
+        <InfoGrid>
+          <InfoItem>
+            <InfoLabel>Thời gian</InfoLabel>
+            <InfoValue>{tour.duration}</InfoValue>
+          </InfoItem>
+          <InfoItem>
+            <InfoLabel>Địa điểm</InfoLabel>
+            <InfoValue>{tour.address}</InfoValue>
+          </InfoItem>
+          <InfoItem>
+            <InfoLabel>Số người</InfoLabel>
+            <InfoValue>{tour.guests}</InfoValue>
+          </InfoItem>
+          <InfoItem>
+            <InfoLabel>Loại tour</InfoLabel>
+            <InfoValue>{tour.icon} {tour.tourType || 'Group'}</InfoValue>
+          </InfoItem>
+        </InfoGrid>
+
+        {/* Main Content + Booking Form */}
         <MainContent>
-          <LeftColumn>
-            <InfoGrid>
-              <InfoItem>
-                <InfoLabel>Duration</InfoLabel>
-                <InfoValue>3 days</InfoValue>
-              </InfoItem>
-              <InfoItem>
-                <InfoLabel>Group Size</InfoLabel>
-                <InfoValue>10 people</InfoValue>
-              </InfoItem>
-              <InfoItem>
-                <InfoLabel>Ages</InfoLabel>
-                <InfoValue>18-99 yrs</InfoValue>
-              </InfoItem>
-              <InfoItem>
-                <InfoLabel>Languages</InfoLabel>
-                <InfoValue>English, Japanese</InfoValue>
-              </InfoItem>
-            </InfoGrid>
+          <div>
+            {/* Overview Section */}
+            {tour.overview && tour.overview.length > 0 && (
+              <OverviewSection>
+                <SectionTitle>Tổng quan</SectionTitle>
+                {Array.isArray(tour.overview) ? (
+                  tour.overview.map((item, idx) => (
+                    <OverviewText key={idx}>{item}</OverviewText>
+                  ))
+                ) : (
+                  <OverviewText>{tour.overview}</OverviewText>
+                )}
+              </OverviewSection>
+            )}
 
-            <Section>
-              <SectionTitle>Tour Overview</SectionTitle>
-              <Description>
-                The Phi Phi archipelago is a must-visit while in Phuket, and this speedboat trip whisks you around the islands in one day. Swim over the coral reefs of Pileh Lagoon, have lunch at Phi Phi Leh, snorkel at Bamboo Island, and visit Monkey Beach and Maya Bay. Boat transfers, snacks, buffet lunch, snorkeling equipment, and Phuket hotel pickup and drop-off all included.
-              </Description>
-              
-              <SectionTitle>Tour Highlights</SectionTitle>
-              <HighlightsList>
-                <HighlightItem>Experience the thrill of a speedboat to the stunning Phi Phi Islands</HighlightItem>
-                <HighlightItem>Be amazed by the variety of marine life in the archipelago</HighlightItem>
-                <HighlightItem>Enjoy relaxing in paradise with white sand beaches and azure turquoise water</HighlightItem>
-                <HighlightItem>Feel the comfort of a tour limited to 35 passengers</HighlightItem>
-                <HighlightItem>Catch a glimpse of the wild monkeys around Monkey Beach</HighlightItem>
-              </HighlightsList>
-            </Section>
+            {/* Highlights Section */}
+            {tour.highlights && tour.highlights.length > 0 && (
+              <OverviewSection>
+                <SectionTitle>Điểm nổi bật</SectionTitle>
+                <HighlightsList>
+                  {Array.isArray(tour.highlights) ? (
+                    tour.highlights.map((highlight, idx) => (
+                      <HighlightItem key={idx}>
+                        <IconStar size={20} fill="currentColor" />
+                        {highlight}
+                      </HighlightItem>
+                    ))
+                  ) : (
+                    <HighlightItem>
+                      <IconStar size={20} fill="currentColor" />
+                      {tour.highlights}
+                    </HighlightItem>
+                  )}
+                </HighlightsList>
+              </OverviewSection>
+            )}
 
-            <Section>
-              <SectionTitle>What's included</SectionTitle>
-              <IncludedGrid>
-                <IncludedItem>
-                  <IconCheck size={20} color="#22c55e" />
-                  Beverages, drinking water, morning tea and buffet lunch
-                </IncludedItem>
-                <IncludedItem $excluded>
-                  <IconX size={20} color="#ef4444" />
-                  Towel
-                </IncludedItem>
-                <IncludedItem>
-                  <IconCheck size={20} color="#22c55e" />
-                  Local taxes
-                </IncludedItem>
-                <IncludedItem $excluded>
-                  <IconX size={20} color="#ef4444" />
-                  Tips
-                </IncludedItem>
-                <IncludedItem>
-                  <IconCheck size={20} color="#22c55e" />
-                  Hotel pickup and drop-off by air-conditioned minivan
-                </IncludedItem>
-                <IncludedItem $excluded>
-                  <IconX size={20} color="#ef4444" />
-                  Alcoholic Beverages
-                </IncludedItem>
-                <IncludedItem>
-                  <IconCheck size={20} color="#22c55e" />
-                  Insurance/Transfer to a private pier
-                </IncludedItem>
-                <IncludedItem>
-                  <IconCheck size={20} color="#22c55e" />
-                  Soft drinks
-                </IncludedItem>
-                <IncludedItem>
-                  <IconCheck size={20} color="#22c55e" />
-                  Tour Guide
-                </IncludedItem>
-              </IncludedGrid>
-            </Section>
+            {/* Services Section */}
+            {(tour.includedServices?.length > 0 || tour.excludedServices?.length > 0) && (
+              <OverviewSection>
+                <SectionTitle>Dịch vụ</SectionTitle>
+                <ServicesGrid>
+                  {tour.includedServices?.length > 0 && (
+                    <div>
+                      <h3 style={{ color: '#333', marginBottom: '12px', fontSize: '16px', fontWeight: '600' }}>
+                        ✓ Bao gồm
+                      </h3>
+                      <ServiceList>
+                        {tour.includedServices.map((service) => (
+                          <ServiceItem key={service.id} $included={true}>
+                            <IconCheck size={20} />
+                            {service.item}
+                          </ServiceItem>
+                        ))}
+                      </ServiceList>
+                    </div>
+                  )}
+                  {tour.excludedServices?.length > 0 && (
+                    <div>
+                      <h3 style={{ color: '#333', marginBottom: '12px', fontSize: '16px', fontWeight: '600' }}>
+                        ✗ Không bao gồm
+                      </h3>
+                      <ServiceList>
+                        {tour.excludedServices.map((service) => (
+                          <ServiceItem key={service.id} $included={false}>
+                            <IconX size={20} />
+                            {service.item}
+                          </ServiceItem>
+                        ))}
+                      </ServiceList>
+                    </div>
+                  )}
+                </ServicesGrid>
+              </OverviewSection>
+            )}
 
-            <ItinerarySection>
-              <SectionTitle>Itinerary</SectionTitle>
-              
-              <div style={{ marginBottom: '24px' }}>
-                <ItineraryTitle>
-                  <DayNumber>1</DayNumber>
-                  <DayTitle>Day 1: Prepare & Start Cruise</DayTitle>
-                </ItineraryTitle>
-                <DayDescription>
-                  Begin your adventure with hotel pickup in Hanoi. Travel to Ha Long Bay and board your cruise ship. Enjoy welcome drinks and a briefing about the journey ahead.
-                </DayDescription>
-              </div>
+            {/* Comments Section */}
+            <CommentsSection>
+              <SectionTitle>Đánh giá từ khách hàng</SectionTitle>
+              {tour.comments && tour.comments.length > 0 ? (
+                <CommentsList>
+                  {tour.comments.map((comment, idx) => (
+                    <CommentCard key={idx}>
+                      <CommentAuthor>
+                        <div>
+                          <CommentName>{comment.author || 'Anonymous'}</CommentName>
+                          <CommentRating>
+                            {'⭐'.repeat(comment.rating || 5)}
+                          </CommentRating>
+                        </div>
+                      </CommentAuthor>
+                      <CommentText>{comment.text}</CommentText>
+                    </CommentCard>
+                  ))}
+                </CommentsList>
+              ) : (
+                <p style={{ color: '#999' }}>Chưa có đánh giá nào</p>
+              )}
+            </CommentsSection>
+          </div>
 
-              <div style={{ marginBottom: '24px' }}>
-                <ItineraryTitle>
-                  <DayNumber>2</DayNumber>
-                  <DayTitle>Day 2: Explore Caves & Swimming</DayTitle>
-                </ItineraryTitle>
-                <DayDescription>
-                  Wake up to the stunning bay views. Visit magnificent caves, go kayaking, and enjoy swimming in crystal clear waters. Experience traditional fishing village life.
-                </DayDescription>
-              </div>
-
-              <div style={{ marginBottom: '24px' }}>
-                <ItineraryTitle>
-                  <DayNumber>3</DayNumber>
-                  <DayTitle>Day 3: Visit Sapa Trekking</DayTitle>
-                </ItineraryTitle>
-                <DayDescription>
-                  Journey to Sapa and begin trekking through terraced rice fields and ethnic minority villages. Meet local people and learn about their unique culture.
-                </DayDescription>
-              </div>
-            </ItinerarySection>
-
-            <MapSection>
-              <SectionTitle>Tour Map</SectionTitle>
-              <MapPlaceholder>
-                Interactive Map - Ha Long Bay to Sapa Route
-              </MapPlaceholder>
-            </MapSection>
-
-            <CalendarSection>
-              <SectionTitle>Availability Calendar</SectionTitle>
-              <CalendarGrid>
-                {[...Array(31)].map((_, i) => (
-                  <CalendarDay 
-                    key={i} 
-                    $available={i % 3 !== 0}
-                    $selected={i === 15}
-                  >
-                    {i + 1}
-                  </CalendarDay>
-                ))}
-              </CalendarGrid>
-            </CalendarSection>
-
-            <FAQSection>
-              <SectionTitle>FAQ</SectionTitle>
-              
-              <FAQItem>
-                <FAQQuestion>
-                  <span style={{ color: '#ff6b6b' }}>Q</span>
-                  Can I get the refund?
-                </FAQQuestion>
-                <FAQAnswer>
-                  Yes, you can get a full refund if you cancel at least 48 hours before the tour starts. Cancellations within 48 hours are subject to a 50% fee.
-                </FAQAnswer>
-              </FAQItem>
-
-              <FAQItem>
-                <FAQQuestion>
-                  <span style={{ color: '#ff6b6b' }}>Q</span>
-                  What do I need to bring?
-                </FAQQuestion>
-                <FAQAnswer>
-                  Please bring comfortable walking shoes, sunscreen, hat, camera, and any personal medications. Swimming gear is optional.
-                </FAQAnswer>
-              </FAQItem>
-
-              <FAQItem>
-                <FAQQuestion>
-                  <span style={{ color: '#ff6b6b' }}>Q</span>
-                  Is the tour suitable for children?
-                </FAQQuestion>
-                <FAQAnswer>
-                  Yes, this tour is family-friendly and suitable for children aged 5 and above. Children must be accompanied by adults.
-                </FAQAnswer>
-              </FAQItem>
-            </FAQSection>
-
-            <ReviewsSection>
-              <SectionTitle>Customer Reviews</SectionTitle>
-              
-              <ReviewStats>
-                <StatItem>
-                  <StatLabel>Location</StatLabel>
-                  <StatValue>5.0</StatValue>
-                </StatItem>
-                <StatItem>
-                  <StatLabel>Amenities</StatLabel>
-                  <StatValue>5.0</StatValue>
-                </StatItem>
-                <StatItem>
-                  <StatLabel>Food</StatLabel>
-                  <StatValue>5.0</StatValue>
-                </StatItem>
-                <StatItem>
-                  <StatLabel>Price</StatLabel>
-                  <StatValue>5.0</StatValue>
-                </StatItem>
-                <StatItem>
-                  <StatLabel>Rooms</StatLabel>
-                  <StatValue>5.0</StatValue>
-                </StatItem>
-                <StatItem>
-                  <StatLabel>Tourism</StatLabel>
-                  <StatValue>5.0</StatValue>
-                </StatItem>
-                <StatItem>
-                  <StatLabel>Cleanliness</StatLabel>
-                  <StatValue>5.0</StatValue>
-                </StatItem>
-                <StatItem>
-                  <StatLabel>Tour Operator</StatLabel>
-                  <StatValue>5.0</StatValue>
-                </StatItem>
-              </ReviewStats>
-
-              <ReviewCard>
-                <ReviewHeader>
-                  <ReviewAuthor>All Fams</ReviewAuthor>
-                  <ReviewDate>April 2020</ReviewDate>
-                </ReviewHeader>
-                <ReviewText>
-                  "Nice to have 2+ full day trip to have it. This isn't a short's trip should have passed I am lucky of this all be happy to here spend I have trip I am there nice have place trip"
-                </ReviewText>
-                <ReviewImages>
-                  <ReviewImage src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=100&h=100&fit=crop" alt="Review 1" />
-                  <ReviewImage src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=100&h=100&fit=crop" alt="Review 2" />
-                  <ReviewImage src="https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?w=100&h=100&fit=crop" alt="Review 3" />
-                </ReviewImages>
-              </ReviewCard>
-
-              <ReviewCard>
-                <ReviewHeader>
-                  <ReviewAuthor>Ali Tufan</ReviewAuthor>
-                  <ReviewDate>April 2020</ReviewDate>
-                </ReviewHeader>
-                <ReviewText>
-                  "Nice to have 2+ full day trip to have it. This isn't a short's trip should have passed I am lucky of this all be happy to here spend I have trip I am there nice have place trip"
-                </ReviewText>
-                <ReviewImages>
-                  <ReviewImage src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=100&h=100&fit=crop" alt="Review 1" />
-                  <ReviewImage src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=100&h=100&fit=crop" alt="Review 2" />
-                  <ReviewImage src="https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?w=100&h=100&fit=crop" alt="Review 3" />
-                </ReviewImages>
-              </ReviewCard>
-            </ReviewsSection>
-          </LeftColumn>
-
-          <BookingCard>
-            <PriceSection>
-              <PriceLabel>From</PriceLabel>
-              <Price>$1,200</Price>
-            </PriceSection>
-
-            <DateSelector>
-              <Label>From</Label>
-              <Input type="text" value="February 05 - March 14" readOnly />
-            </DateSelector>
-
-            <DateSelector>
-              <Label>Time</Label>
-              <Input type="text" placeholder="Choose time" />
-            </DateSelector>
-
-            <TicketsSection>
-              <Label>Tickets</Label>
-              <TicketItem>
-                <TicketInfo>
-                  <TicketType>Adult (18+ years)</TicketType>
-                  <TicketPrice>${ticketPrices.adult}</TicketPrice>
-                </TicketInfo>
-                <QuantityControl>
-                  <QuantityButton onClick={() => updateQuantity('adult', -1)} disabled={tickets.adult === 0}>
-                    −
-                  </QuantityButton>
-                  <Quantity>{tickets.adult}</Quantity>
-                  <QuantityButton onClick={() => updateQuantity('adult', 1)}>
-                    +
-                  </QuantityButton>
-                </QuantityControl>
-              </TicketItem>
-
-              <TicketItem>
-                <TicketInfo>
-                  <TicketType>Youth (13-17 years)</TicketType>
-                  <TicketPrice>${ticketPrices.youth}</TicketPrice>
-                </TicketInfo>
-                <QuantityControl>
-                  <QuantityButton onClick={() => updateQuantity('youth', -1)} disabled={tickets.youth === 0}>
-                    −
-                  </QuantityButton>
-                  <Quantity>{tickets.youth}</Quantity>
-                  <QuantityButton onClick={() => updateQuantity('youth', 1)}>
-                    +
-                  </QuantityButton>
-                </QuantityControl>
-              </TicketItem>
-
-              <TicketItem>
-                <TicketInfo>
-                  <TicketType>Children (0-12 years)</TicketType>
-                  <TicketPrice>${ticketPrices.children}</TicketPrice>
-                </TicketInfo>
-                <QuantityControl>
-                  <QuantityButton onClick={() => updateQuantity('children', -1)} disabled={tickets.children === 0}>
-                    −
-                  </QuantityButton>
-                  <Quantity>{tickets.children}</Quantity>
-                  <QuantityButton onClick={() => updateQuantity('children', 1)}>
-                    +
-                  </QuantityButton>
-                </QuantityControl>
-              </TicketItem>
-            </TicketsSection>
-
-            <ExtraSection>
-              <Label>Add Extra</Label>
-              <ExtraItem>
-                <label>
-                  <input 
-                    type="checkbox" 
-                    checked={extras.servicePerBooking}
-                    onChange={() => toggleExtra('servicePerBooking')}
-                  />
-                  Add Service per booking
-                </label>
-                <ExtraPrice>${extraPrices.servicePerBooking}</ExtraPrice>
-              </ExtraItem>
-              <ExtraItem>
-                <label>
-                  <input 
-                    type="checkbox"
-                    checked={extras.servicePerPerson}
-                    onChange={() => toggleExtra('servicePerPerson')}
-                  />
-                  Add Service per person
-                </label>
-                <ExtraPrice>
-                  Adult: ${extraPrices.servicePerPerson} - Youth: $14.00
-                </ExtraPrice>
-              </ExtraItem>
-            </ExtraSection>
-
-            <TotalSection>
-              <TotalLabel>Total:</TotalLabel>
-              <TotalPrice>${calculateTotal()}</TotalPrice>
-            </TotalSection>
-
-            <BookButton>Book Now</BookButton>
-          </BookingCard>
+          {/* Booking Form */}
+          <BookingForm tour={tour} onBooking={handleBooking} />
         </MainContent>
 
-        <SuggestionsSection>
-          <SectionTitle>You might also like...</SectionTitle>
-          <SuggestionsGrid>
-            <SuggestionCard>
-              <SuggestionImage src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop" alt="Tour 1" />
-              <SuggestionContent>
-                <SuggestionTitle>Centipede Tour - Guided Arizona Desert Tour by ATV</SuggestionTitle>
-                <SuggestionMeta>
-                  <SuggestionDuration>4 days</SuggestionDuration>
-                  <SuggestionPrice>From $336.28</SuggestionPrice>
-                </SuggestionMeta>
-              </SuggestionContent>
-            </SuggestionCard>
-
-            <SuggestionCard>
-              <SuggestionImage src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=300&fit=crop" alt="Tour 2" />
-              <SuggestionContent>
-                <SuggestionTitle>Molokini and Turtle Town Snorkeling Adventure Aboard</SuggestionTitle>
-                <SuggestionMeta>
-                  <SuggestionDuration>4 days</SuggestionDuration>
-                  <SuggestionPrice>From $225</SuggestionPrice>
-                </SuggestionMeta>
-              </SuggestionContent>
-            </SuggestionCard>
-
-            <SuggestionCard>
-              <SuggestionImage src="https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?w=400&h=300&fit=crop" alt="Tour 3" />
-              <SuggestionContent>
-                <SuggestionTitle>Westminster Walking Tour & Westminster Abbey Entry</SuggestionTitle>
-                <SuggestionMeta>
-                  <SuggestionDuration>4 days</SuggestionDuration>
-                  <SuggestionPrice>From $943</SuggestionPrice>
-                </SuggestionMeta>
-              </SuggestionContent>
-            </SuggestionCard>
-
-            <SuggestionCard>
-              <SuggestionImage src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=400&h=300&fit=crop" alt="Tour 4" />
-              <SuggestionContent>
-                <SuggestionTitle>All-Inclusive Ultimate Circle Island Day Tour with Lunch</SuggestionTitle>
-                <SuggestionMeta>
-                  <SuggestionDuration>4 days</SuggestionDuration>
-                  <SuggestionPrice>From $771</SuggestionPrice>
-                </SuggestionMeta>
-              </SuggestionContent>
-            </SuggestionCard>
-          </SuggestionsGrid>
-        </SuggestionsSection>
+        {/* Payment Modal */}
+        <PaymentModal 
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          bookingData={bookingData}
+          userInfo={userInfo}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
       </Container>
     </PageWrapper>
   );

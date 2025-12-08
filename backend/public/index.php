@@ -37,6 +37,7 @@ use App\Controllers\FaqController;
 use App\Controllers\AuthController;
 use App\Controllers\UserController;
 use App\Controllers\FilterController;
+use App\Controllers\BookingController;
 
 $router = new Router();
 
@@ -69,7 +70,9 @@ $router->put('/sections/reorder', [SectionController::class, 'reorder'] );
 /**
  * Comment routes
  */
-$router->get('/comments', [CommentController::class, 'getAllComments']);
+$router->post('/comments', [CommentController::class, 'create']);
+$router->get('/comments', [CommentController::class, 'list']); // optional query ?tourId= to filter
+$router->get('/comments/top', [CommentController::class, 'topRated']);
 
 /**
  * Tour routes
@@ -144,6 +147,16 @@ $router->delete('/admin/faq/{id}', [FaqController::class, 'deleteFaq']);
 $router->post('/admin/faq/categories', [FaqController::class, 'createFaqCategory']);
 $router->put('/admin/faq/categories/{id}', [FaqController::class, 'updateFaqCategory']);
 $router->delete('/admin/faq/categories/{id}', [FaqController::class, 'deleteFaqCategory']);
+
+/**
+ * Booking Routes
+ */
+$router->post('/bookings', [BookingController::class, 'createBooking']);
+$router->get('/bookings/my-bookings', [BookingController::class, 'getUserBookings']);
+$router->get('/bookings', [BookingController::class, 'getBookingById']); // ?userId=X&tourId=Y
+$router->put('/bookings', [BookingController::class, 'updateBooking']); // ?userId=X&tourId=Y
+$router->delete('/bookings', [BookingController::class, 'deleteBooking']); // ?userId=X&tourId=Y
+$router->get('/admin/bookings', [BookingController::class, 'getAllBookings']);
 // ======= END ROUTES =======
 
 // Serve static files from Storage directory

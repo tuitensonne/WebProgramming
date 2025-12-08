@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import styled from "styled-components";
 import api from "../../api/api";
 import LoadingComponent from "../components/LoadingComponent";
@@ -51,9 +52,18 @@ const ContentWrapper = styled.div`
 `;
 
 const ProfilePage = () => {
+  const [searchParams] = useSearchParams();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState("personal");
+
+  // Read section from URL query parameter
+  useEffect(() => {
+    const section = searchParams.get('section');
+    if (section && ['personal', 'tour-manage', 'saved-tours'].includes(section)) {
+      setActiveSection(section);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -157,7 +167,12 @@ const ProfilePage = () => {
         </SidebarWrapper>
         
         <ContentWrapper>
-          {activeSection === "tour-manage" && <TourManagementSection />}
+          {activeSection === "tour-manage" && (
+            <TourManagementSection 
+              key={`tour-manage-${searchParams.get('refresh') || 'default'}`}
+              isActive={activeSection === "tour-manage"} 
+            />
+          )}
           {activeSection === "saved-tours" && <SavedToursSection />}
           {activeSection === "personal" && (
             <>
