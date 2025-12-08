@@ -31,9 +31,8 @@ export default function TravelGuidePage() {
   const [loading, setLoading] = useState(true);
   const [regions, setRegions] = useState([]);
 
-  // Filter & Search state
   const [search, setSearch] = useState("");
-  const [region, setRegion] = useState("all"); // 'all' | 'vietnam' | 'asia' | 'europe'
+  const [region, setRegion] = useState("all");
   const [sort, setSort] = useState("latest");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -41,47 +40,38 @@ export default function TravelGuidePage() {
 
   const limit = 6;
 
-  // Fetch regions for filter dropdown
   useEffect(() => {
     const fetchRegions = async () => {
       try {
-        // Expect backend endpoint to be /posts/regions (controller.getRegions)
         const res = await api.get("/posts/regions");
         if (res.data?.success) {
-          // Accept either array of strings ['vietnam','asia',...] or array of objects
           const data = res.data.data || [];
-          // Normalize to array of region keys
           const normalized = data
             .map((r) => {
               if (typeof r === "string") return r;
-              // if object like { region: 'vietnam' } or {name: 'vietnam'}
               if (r.region) return r.region;
               if (r.name) return r.name;
-              // fallback: try first value
               return Object.values(r)[0];
             })
             .filter(Boolean);
           setRegions(normalized);
         } else {
-          console.error("Failed to fetch regions:", res.data);
+          setRegions(["vietnam", "asia", "europe"]);
         }
-      } catch (err) {
-        console.error("Error fetching regions:", err);
-        // Optional fallback: you can hardcode regions if API not available
+      } catch {
         setRegions(["vietnam", "asia", "europe"]);
       }
     };
     fetchRegions();
   }, []);
 
-  // Fetch guides with filters
   useEffect(() => {
     const fetchGuides = async () => {
       setLoading(true);
       try {
         const params = new URLSearchParams();
         if (search) params.append("search", search);
-        if (region && region !== "all") params.append("region", region);
+        if (region !== "all") params.append("region", region);
         params.append("sort", sort);
         params.append("page", currentPage);
         params.append("limit", limit);
@@ -92,19 +82,16 @@ export default function TravelGuidePage() {
           setTotal(res.data.data.total || 0);
           setTotalPages(res.data.data.pages || 1);
         } else {
-          console.error("Failed to fetch guides:", res.data);
           setGuides([]);
           setTotal(0);
           setTotalPages(1);
         }
-      } catch (err) {
-        console.error("Error fetching guides:", err);
+      } catch {
         setGuides([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchGuides();
   }, [search, region, sort, currentPage]);
 
@@ -141,7 +128,6 @@ export default function TravelGuidePage() {
 
   return (
     <Box sx={{ bgcolor: "#fff", minHeight: "100vh" }}>
-      {/* Filters */}
       <Container maxWidth="lg" sx={{ mt: 6, mb: 6 }}>
         <Typography
           variant="h4"
@@ -149,13 +135,23 @@ export default function TravelGuidePage() {
             fontFamily: "'Urbanist', sans-serif",
             fontWeight: 700,
             textAlign: "center",
-            mb: 4,
+            mb: { xs: 3, md: 4 },
+            fontSize: { xs: "1.8rem", md: "2.2rem" },
           }}
         >
           Cẩm nang du lịch
         </Typography>
 
-        <Box sx={{ display: "flex", gap: 3, mb: 6, flexWrap: "wrap" }}>
+        {/* FILTER WRAPPER */}
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: { xs: 2, sm: 3 },
+            mb: { xs: 4, md: 6 },
+            flexDirection: { xs: "column", sm: "row" },
+          }}
+        >
           <TextField
             placeholder="Tìm theo tên bài viết..."
             variant="outlined"
@@ -170,10 +166,13 @@ export default function TravelGuidePage() {
                 </InputAdornment>
               ),
             }}
-            sx={{ flex: 1, minWidth: 200 }}
+            sx={{
+              flex: 1,
+              minWidth: { xs: "100%", sm: 220, md: 260 },
+            }}
           />
 
-          <FormControl size="small" sx={{ minWidth: 200 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 200 } }}>
             <InputLabel>Khu vực</InputLabel>
             <Select
               value={region}
@@ -182,7 +181,6 @@ export default function TravelGuidePage() {
               IconComponent={KeyboardArrowDown}
             >
               <MenuItem value="all">{REGION_LABELS.all}</MenuItem>
-              {/* Render from API regions (normalized) */}
               {regions.map((r) => (
                 <MenuItem key={r} value={r}>
                   {REGION_LABELS[r] ?? r}
@@ -191,7 +189,7 @@ export default function TravelGuidePage() {
             </Select>
           </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 200 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 200 } }}>
             <InputLabel>Sắp xếp theo</InputLabel>
             <Select
               value={sort}
@@ -206,14 +204,20 @@ export default function TravelGuidePage() {
           </FormControl>
         </Box>
 
-        {/* Results count */}
+        {/* RESULTS COUNT */}
         <Box sx={{ mb: 3 }}>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              fontSize: { xs: "0.9rem", md: "1rem" },
+            }}
+          >
             Tìm thấy <strong>{total}</strong> bài viết
           </Typography>
         </Box>
 
-        {/* Posts Grid */}
+        {/* POSTS GRID */}
         {!loading && guides.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 6 }}>
             <Typography variant="body1" sx={{ color: "text.secondary" }}>
@@ -225,13 +229,13 @@ export default function TravelGuidePage() {
             <Box
               sx={{
                 display: "grid",
+                gap: { xs: 3, md: 4 },
+                mb: { xs: 4, md: 6 },
                 gridTemplateColumns: {
                   xs: "1fr",
                   sm: "1fr 1fr",
-                  md: "1fr 1fr",
+                  md: "repeat(3, 1fr)",
                 },
-                gap: 4,
-                mb: 6,
               }}
             >
               {guides.map((post) => (
@@ -242,62 +246,76 @@ export default function TravelGuidePage() {
                 >
                   <Card
                     sx={{
-                      borderRadius: "12px",
+                      borderRadius: "14px",
                       overflow: "hidden",
-                      transition: "transform 0.3s",
                       height: "100%",
                       display: "flex",
                       flexDirection: "column",
+                      transition: "0.3s",
                       "&:hover": {
                         transform: "translateY(-8px)",
-                        boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                        boxShadow: "0px 8px 28px rgba(0,0,0,0.15)",
                       },
                     }}
                   >
                     {(post.thumbnailUrl || post.image) && (
                       <CardMedia
                         component="img"
-                        height="250"
                         image={post.thumbnailUrl || post.image}
                         alt={post.title}
-                        sx={{ objectFit: "cover" }}
+                        sx={{
+                          height: { xs: 180, sm: 200, md: 220 },
+                          objectFit: "cover",
+                        }}
                       />
                     )}
-                    <CardContent sx={{ p: 3, flexGrow: 1 }}>
+
+                    <CardContent sx={{ p: { xs: 2.5, md: 3 }, flexGrow: 1 }}>
                       <Box
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
-                          mb: 2,
                           flexWrap: "wrap",
                           gap: 1,
+                          mb: 2,
                         }}
                       >
                         <Typography
-                          sx={{ color: "#5b5b5b", fontSize: "0.875rem" }}
+                          sx={{
+                            fontSize: { xs: "0.8rem", md: "0.875rem" },
+                            color: "#5b5b5b",
+                          }}
                         >
                           📍 {post.location || "Chưa xác định"}
                         </Typography>
+
                         <Box
                           sx={{ display: "flex", alignItems: "center", gap: 1 }}
                         >
                           <Typography
-                            sx={{ color: "#5b5b5b", fontSize: "0.875rem" }}
+                            sx={{
+                              fontSize: { xs: "0.8rem", md: "0.875rem" },
+                              color: "#5b5b5b",
+                            }}
                           >
                             📅 {formatDate(post.createdAt)}
                           </Typography>
+
                           {post.readTime && (
                             <>
                               <Box
                                 sx={{
-                                  width: "4px",
-                                  height: "4px",
+                                  width: 4,
+                                  height: 4,
                                   borderRadius: "50%",
                                   bgcolor: "#767676",
                                 }}
                               />
                               <Typography
-                                sx={{ color: "#5b5b5b", fontSize: "0.875rem" }}
+                                sx={{
+                                  fontSize: { xs: "0.8rem", md: "0.875rem" },
+                                  color: "#5b5b5b",
+                                }}
                               >
                                 ⏱ {post.readTime} phút
                               </Typography>
@@ -305,12 +323,15 @@ export default function TravelGuidePage() {
                           )}
                         </Box>
                       </Box>
+
                       <Typography
                         variant="h6"
                         sx={{
                           fontFamily: "'Urbanist', sans-serif",
                           fontWeight: 700,
-                          mb: 2,
+                          mb: 1.5,
+                          lineHeight: 1.3,
+                          fontSize: { xs: "1rem", md: "1.15rem" },
                           display: "-webkit-box",
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: "vertical",
@@ -319,27 +340,28 @@ export default function TravelGuidePage() {
                       >
                         {post.title}
                       </Typography>
+
                       <Typography
                         sx={{
                           color: "#000",
-                          mb: 3,
-                          lineHeight: 1.6,
+                          fontSize: { xs: "0.85rem", md: "0.95rem" },
+                          mb: 2.5,
+                          lineHeight: 1.5,
                           display: "-webkit-box",
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: "vertical",
                           overflow: "hidden",
-                          fontSize: "0.9rem",
                         }}
                       >
                         {post.description}
                       </Typography>
+
                       <Box
                         sx={{
                           display: "flex",
                           alignItems: "center",
                           gap: 1,
                           color: "#4169E1",
-                          cursor: "pointer",
                           mt: "auto",
                         }}
                       >
@@ -354,7 +376,6 @@ export default function TravelGuidePage() {
               ))}
             </Box>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <Box sx={{ display: "flex", justifyContent: "center", mb: 8 }}>
                 <Pagination
