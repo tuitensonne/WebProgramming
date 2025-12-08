@@ -135,7 +135,7 @@ const Header = () => {
         { label: "Du lịch quốc tế", path: "/international" },
         { label: "Kiểu tour du lịch", path: "/tour-types" },
         { label: "Lịch khởi hành", path: "/schedule" },
-        { label: "Cẩm nang du lịch", path: "/guide" },
+        { label: "Cẩm nang du lịch", path: "/travel-guides" },
     ];
 
     const UserMenu = () => (

@@ -202,6 +202,14 @@ export default function Header() {
                         <button
                           className="dropdown-item"
                           onClick={() => {
+                            navigate("/admin/posts");
+                          }}
+                        >
+                          Bài viết
+                        </button>
+                        <button
+                          className="dropdown-item"
+                          onClick={() => {
                             navigate("/admin/footer");
                           }}
                         >
