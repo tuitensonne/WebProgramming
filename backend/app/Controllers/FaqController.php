@@ -3,7 +3,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\FaqModel;
-use App\Middleware\Auth; // Import lớp Auth/Middleware
+use App\Middleware\Auth; 
 
 
 class FaqController extends Controller
@@ -12,13 +12,8 @@ class FaqController extends Controller
 
     public function __construct() 
     {
-        // Khởi tạo Model
         $this->faqModel = new FaqModel(); 
     }
-
-    // =======================================================
-    // API CÔNG KHAI (Frontend - KHÔNG cần phân quyền)
-    // =======================================================
 
     /**
      * API Endpoint: GET /api/faqs
@@ -26,20 +21,18 @@ class FaqController extends Controller
      */
     public function getFaqs()
     {
-        // Lấy tham số phân trang và lọc (từ query params)
-        // Mặc định cho Public: limit cao hơn hoặc lấy tất cả nếu không có tham số limit
         $page = (int)($_GET['page'] ?? 1);
-        $limit = (int)($_GET['limit'] ?? 20); // Tăng limit mặc định cho public view
+        $limit = (int)($_GET['limit'] ?? 20); 
         $categoryId = (int)($_GET['categoryId'] ?? 0);
-        
+        $includeHidden = isset($_GET['includeHidden']) && $_GET['includeHidden'] === 'true'; 
+
         $offset = ($page - 1) * $limit;
         
         try {
-            $faqs = $this->faqModel->getAllFaqs($limit, $offset, $categoryId);
-            $total = $this->faqModel->countAllFaqs($categoryId);
+            $faqs = $this->faqModel->getAllFaqs($limit, $offset, $categoryId, $includeHidden);
+            $total = $this->faqModel->countAllFaqs($categoryId, $includeHidden); 
 
             if ($faqs === null) {
-                // Giữ nguyên logic lỗi 500 nếu model thất bại
                 return $this->error('Failed to retrieve FAQs from database', 500);
             }
 
@@ -57,7 +50,6 @@ class FaqController extends Controller
     
     /**
      * API Endpoint: GET /api/faq/categories
-     * Lấy danh sách tất cả danh mục FAQ (Dùng cho Public và Admin).
      */
     public function getFaqCategories()
     {
@@ -69,32 +61,18 @@ class FaqController extends Controller
         }
     }
 
-    // =======================================================
-    // API QUẢN TRỊ (Admin CRUD - Yêu cầu phân quyền Admin)
-    // =======================================================
-    
-    /**
-     * Khởi tạo và kiểm tra quyền Admin cho các hàm quản trị
-     */
     public function __adminConstruct() 
     {
-        // *** Đảm bảo Admin role được yêu cầu cho các hành động CRUD ***
         Auth::requireRole(['admin']);
-        // Khởi tạo model lần nữa trong hàm Admin Construct nếu cần, 
-        // hoặc đặt logic Auth ở đầu các hàm CRUD nếu muốn tái sử dụng __construct chung.
         $this->faqModel = new FaqModel(); 
     }
-
-    // --- QUẢN LÝ FAQ (Câu hỏi) ---
 
     /**
      * API Endpoint: POST /api/admin/faq (Thêm mới)
      */
     public function createFaq()
     {
-        $this-> __adminConstruct(); // Kích hoạt kiểm tra quyền Admin
-        
-        // SỬA: Dùng $this->getJsonBody() thay vì Input::getJsonBody()
+        $this-> __adminConstruct();
         $data = $this->getJsonBody(); 
         
         if (empty($data['question']) || empty($data['answer'])) {
@@ -120,9 +98,7 @@ class FaqController extends Controller
      */
     public function updateFaq($id)
     {
-        $this-> __adminConstruct(); // Kích hoạt kiểm tra quyền Admin
-        
-        // SỬA: Dùng $this->getJsonBody() thay vì Input::getJsonBody()
+        $this-> __adminConstruct(); 
         $data = $this->getJsonBody(); 
         
         if (empty($data['question']) || empty($data['answer'])) {
@@ -148,8 +124,7 @@ class FaqController extends Controller
      */
     public function deleteFaq($id)
     {
-        $this-> __adminConstruct(); // Kích hoạt kiểm tra quyền Admin
-        
+        $this-> __adminConstruct(); 
         try {
             $success = $this->faqModel->deleteFaq((int)$id);
             
@@ -172,7 +147,6 @@ class FaqController extends Controller
     public function createFaqCategory()
     {
         $this-> __adminConstruct();
-        // SỬA: Dùng $this->getJsonBody() thay vì Input::getJsonBody()
         $data = $this->getJsonBody(); 
         
         if (empty($data['categoryName'])) {
@@ -180,7 +154,7 @@ class FaqController extends Controller
         }
 
         try {
-            $newId = $this->faqModel->createFaqCategory($data); // Hàm này cần được thêm vào FaqModel
+            $newId = $this->faqModel->createFaqCategory($data); 
             
             if ($newId === null) {
                  return $this->error('Failed to create category', 500);
@@ -199,7 +173,6 @@ class FaqController extends Controller
     public function updateFaqCategory($id)
     {
         $this-> __adminConstruct();
-        // SỬA: Dùng $this->getJsonBody() thay vì Input::getJsonBody()
         $data = $this->getJsonBody(); 
         
         if (empty($data['categoryName'])) {
@@ -207,7 +180,7 @@ class FaqController extends Controller
         }
         
         try {
-            $success = $this->faqModel->updateFaqCategory((int)$id, $data); // Hàm này cần được thêm vào FaqModel
+            $success = $this->faqModel->updateFaqCategory((int)$id, $data); 
             
             if (!$success) {
                  return $this->error('Failed to update category or category not found', 404);
@@ -228,8 +201,7 @@ class FaqController extends Controller
         $this-> __adminConstruct();
         
         try {
-            // Cần thêm logic kiểm tra xem có FAQ nào đang sử dụng category này không
-            $success = $this->faqModel->deleteFaqCategory((int)$id); // Hàm này cần được thêm vào FaqModel
+            $success = $this->faqModel->deleteFaqCategory((int)$id); 
             
             if (!$success) {
                  return $this->error('Failed to delete category or category not found', 404);

@@ -3,27 +3,29 @@ import ResetPasswordModal from "../components/ResetPasswordModal";
 import LoadingComponent from "../components/LoadingComponent";
 import { UIContext } from "../Layouts/AdminLayout";
 import api from "../../api/api";
+import {
+    IconEdit,
+    IconCheck,
+    IconX,
+    IconSearch,
+    IconLock,
+    IconLockOpen,
+    IconKey,
+    IconChevronLeft,
+    IconChevronRight,
+    IconArrowsSort,
+    IconUser,
+    IconChevronUp,
+    IconChevronDown,
+    IconFilter,
+    IconPlus,
+} from "@tabler/icons-react";
 
 const ITEMS_PER_PAGE = 10;
 
 const getSortIcon = (key, sortConfig) => {
     const defaultIcon = (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="icon icon-sm text-muted"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            strokeWidth="2"
-            stroke="currentColor"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-            <path d="M3 9l4 -4l4 4m-4 -4v14" />
-            <path d="M21 15l-4 4l-4 -4m4 4v-14" />
-        </svg>
+        <IconArrowsSort size={16} className="ms-1 text-muted" />
     );
 
     if (sortConfig.key !== key) {
@@ -31,37 +33,176 @@ const getSortIcon = (key, sortConfig) => {
     }
 
     return sortConfig.direction === "asc" ? (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="icon icon-sm text-dark"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            strokeWidth="2"
-            stroke="currentColor"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-            <polyline points="6 15 12 9 18 15"></polyline>
-        </svg>
+        <IconChevronUp size={16} className="ms-1" />
     ) : (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="icon icon-sm text-dark"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            strokeWidth="2"
-            stroke="currentColor"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <IconChevronDown size={16} className="ms-1" />
+    );
+};
+
+const AddUserModal = ({ show, onClose, fetchUsers }) => {
+    const [formData, setFormData] = useState({
+        fullName: "",
+        email: "",
+        phone: "",
+        password: "",
+    });
+    const [submitting, setSubmitting] = useState(false);
+    const { showToast } = useContext(UIContext);
+
+    useEffect(() => {
+        if (show) {
+            setFormData({
+                fullName: "",
+                email: "",
+                phone: "",
+                password: "",
+            });
+        }
+    }, [show]);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async () => {
+        const { fullName, email, password } = formData;
+
+        if (!fullName || !email || !password || password.length < 6) {
+            showToast(
+                "Vui lòng điền đủ Tên, Email và Mật khẩu (tối thiểu 6 ký tự).",
+                "danger"
+            );
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            const res = await api.post("/auth/signup", formData);
+
+            if (res.data?.success) {
+                showToast("Thêm tài khoản thành công!", "success");
+                fetchUsers();
+                onClose();
+            } else {
+                showToast(
+                    res.data?.message || "Thêm tài khoản thất bại.",
+                    "danger"
+                );
+            }
+        } catch (error) {
+            if (error.response?.status === 409) {
+                showToast("Email đã tồn tại.", "danger");
+            } else {
+                showToast("Lỗi kết nối server khi tạo tài khoản.", "danger");
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    if (!show) return null;
+
+    return (
+        <div
+            className="modal modal-blur fade show"
+            style={{ display: "block" }}
+            tabIndex="-1"
         >
-            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-            <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
+            <div
+                className="modal-dialog modal-md modal-dialog-centered"
+                role="document"
+            >
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h5 className="modal-title">Thêm Người dùng mới</h5>
+                        <button
+                            type="button"
+                            className="btn-close"
+                            onClick={onClose}
+                        ></button>
+                    </div>
+                    <div className="modal-body">
+                        <div className="mb-3">
+                            <label className="form-label required">
+                                Họ Tên
+                            </label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                name="fullName"
+                                value={formData.fullName}
+                                onChange={handleChange}
+                                disabled={submitting}
+                            />
+                        </div>
+                        <div className="mb-3">
+                            <label className="form-label required">Email</label>
+                            <input
+                                type="email"
+                                className="form-control"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                disabled={submitting}
+                            />
+                        </div>
+                        <div className="mb-3">
+                            <label className="form-label">Số điện thoại</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                disabled={submitting}
+                            />
+                        </div>
+                        <div className="mb-3">
+                            <label className="form-label required">
+                                Mật khẩu (Tối thiểu 6 ký tự)
+                            </label>
+                            <input
+                                type="password"
+                                className="form-control"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                disabled={submitting}
+                            />
+                        </div>
+                    </div>
+                    <div className="modal-footer">
+                        <button
+                            type="button"
+                            className="btn btn-link link-secondary"
+                            onClick={onClose}
+                            disabled={submitting}
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={handleSubmit}
+                            disabled={submitting}
+                        >
+                            {submitting ? (
+                                <>
+                                    <span className="spinner-border spinner-border-sm me-2"></span>
+                                    Đang tạo...
+                                </>
+                            ) : (
+                                <>
+                                    <IconPlus size={18} className="me-1" />
+                                    Tạo tài khoản
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 };
 
@@ -83,7 +224,7 @@ export default function AdminUserManagement() {
     const { showToast } = useContext(UIContext);
     const [editingUserId, setEditingUserId] = useState(null);
     const [editingData, setEditingData] = useState({});
-
+    const [showAddUserModal, setShowAddUserModal] = useState(false);
     const handleSearchSubmit = () => {
         if (submittedSearchQuery !== searchQuery) {
             setSubmittedSearchQuery(searchQuery);
@@ -119,7 +260,6 @@ export default function AdminUserManagement() {
                 setTotalUsers(0);
             }
         } catch (error) {
-            //console.error("Lỗi tải dữ liệu người dùng:", error);
             showToast("Lỗi kết nối server khi tải dữ liệu.", "danger");
         } finally {
             setLoading(false);
@@ -181,7 +321,6 @@ export default function AdminUserManagement() {
     };
     const handleEditStart = (user) => {
         setEditingUserId(user.id);
-        // Copy dữ liệu người dùng hiện tại vào editingData
         setEditingData({
             id: user.id,
             fullName: user.fullName,
@@ -210,7 +349,6 @@ export default function AdminUserManagement() {
         try {
             setIsSaving(true);
 
-            // GỌI API PUT /admin/users/{id}
             const res = await api.put(`/admin/users/${userId}`, editingData);
 
             if (res.data?.success) {
@@ -218,8 +356,8 @@ export default function AdminUserManagement() {
                     res.data.message || `Cập nhật thông tin thành công!`,
                     "success"
                 );
-                setEditingUserId(null); // Thoát chế độ edit
-                await fetchUsers(); // Tải lại dữ liệu để cập nhật bảng
+                setEditingUserId(null);
+                await fetchUsers();
             } else {
                 showToast(
                     res.data?.message || "Cập nhật thông tin thất bại.",
@@ -254,7 +392,6 @@ export default function AdminUserManagement() {
     return (
         <div className="page-wrapper">
             <div className="container-xl">
-                {/* Header Tiêu đề */}
                 <div className="page-header d-print-none">
                     <div className="row align-items-center">
                         <div className="col">
@@ -262,10 +399,19 @@ export default function AdminUserManagement() {
                                 Quản lý Khách hàng (Users)
                             </h2>
                         </div>
+                        <div className="col-auto ms-auto d-print-none">
+                            <button
+                                className="btn btn-primary d-flex align-items-center"
+                                onClick={() => setShowAddUserModal(true)}
+                                disabled={isActionDisabled}
+                            >
+                                <IconPlus size={18} className="me-1" />
+                                Thêm Người dùng
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Nội dung chính: Thẻ Card chứa tìm kiếm, lọc và bảng */}
                 <div className="col-12">
                     <div className="card">
                         <div className="card-header">
@@ -274,10 +420,8 @@ export default function AdminUserManagement() {
                             </h3>
                         </div>
 
-                        {/* Thanh Tìm kiếm và Lọc */}
                         <div className="card-body border-bottom py-3">
                             <div className="d-flex flex-column flex-md-row justify-content-start gap-3">
-                                {/* Search Input */}
                                 <div className="input-group w-100 w-md-auto me-md-3">
                                     <input
                                         type="text"
@@ -293,46 +437,16 @@ export default function AdminUserManagement() {
                                         }}
                                         disabled={loading}
                                     />
-                                    {/* NÚT TÌM KIẾM CỤ THỂ */}
                                     <button
                                         className="btn btn-icon btn-primary"
                                         onClick={handleSearchSubmit}
                                         disabled={loading}
                                         title="Tìm kiếm"
                                     >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="icon"
-                                            width="24"
-                                            height="24"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="2"
-                                            stroke="currentColor"
-                                            fill="none"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        >
-                                            <path
-                                                stroke="none"
-                                                d="M0 0h24v24H0z"
-                                                fill="none"
-                                            ></path>
-                                            <circle
-                                                cx="10"
-                                                cy="10"
-                                                r="7"
-                                            ></circle>
-                                            <line
-                                                x1="21"
-                                                y1="21"
-                                                x2="15"
-                                                y2="15"
-                                            ></line>
-                                        </svg>
+                                        <IconSearch size={20} />
                                     </button>
                                 </div>
 
-                                {/* DROP DOWN LỌC TRẠNG THÁI */}
                                 <div className="dropdown w-100 w-md-auto">
                                     <button
                                         className={`btn dropdown-toggle w-100 ${
@@ -405,7 +519,6 @@ export default function AdminUserManagement() {
                             </div>
                         </div>
 
-                        {/* Bảng Hiển thị Dữ liệu */}
                         <div className="table-responsive">
                             <table className="table card-table table-vcenter text-nowrap datatable table-hover">
                                 <thead>
@@ -488,7 +601,6 @@ export default function AdminUserManagement() {
                                             ? editingData
                                             : user;
 
-                                        // Hàm render ô input/text
                                         const renderCell = (
                                             key,
                                             type = "text"
@@ -577,9 +689,7 @@ export default function AdminUserManagement() {
                                                 </td>
                                                 <td className="text-end">
                                                     {isEditing ? (
-                                                        // NÚT LƯU (V) VÀ HỦY (X)
                                                         <div className="btn-list flex-nowrap">
-                                                            {/* Nút LƯU (V) */}
                                                             <button
                                                                 className="btn btn-icon btn-success"
                                                                 title="Lưu"
@@ -591,27 +701,11 @@ export default function AdminUserManagement() {
                                                                     loading
                                                                 }
                                                             >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    className="icon"
-                                                                    width="24"
-                                                                    height="24"
-                                                                    viewBox="0 0 24 24"
-                                                                    strokeWidth="2"
-                                                                    stroke="currentColor"
-                                                                    fill="none"
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                >
-                                                                    <path
-                                                                        stroke="none"
-                                                                        d="M0 0h24v24H0z"
-                                                                        fill="none"
-                                                                    ></path>
-                                                                    <path d="M5 12l5 5l10 -10"></path>
-                                                                </svg>
+                                                                <IconCheck
+                                                                    size={18}
+                                                                />
                                                             </button>
-                                                            {/* Nút HỦY (X) */}
+
                                                             <button
                                                                 className="btn btn-icon btn-outline-secondary"
                                                                 title="Hủy"
@@ -622,42 +716,13 @@ export default function AdminUserManagement() {
                                                                     isSaving
                                                                 }
                                                             >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    className="icon"
-                                                                    width="24"
-                                                                    height="24"
-                                                                    viewBox="0 0 24 24"
-                                                                    strokeWidth="2"
-                                                                    stroke="currentColor"
-                                                                    fill="none"
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                >
-                                                                    <path
-                                                                        stroke="none"
-                                                                        d="M0 0h24v24H0z"
-                                                                        fill="none"
-                                                                    ></path>
-                                                                    <line
-                                                                        x1="18"
-                                                                        y1="6"
-                                                                        x2="6"
-                                                                        y2="18"
-                                                                    ></line>
-                                                                    <line
-                                                                        x1="6"
-                                                                        y1="6"
-                                                                        x2="18"
-                                                                        y2="18"
-                                                                    ></line>
-                                                                </svg>
+                                                                <IconX
+                                                                    size={18}
+                                                                />
                                                             </button>
                                                         </div>
                                                     ) : (
-                                                        // NÚT HÀNH ĐỘNG THÔNG THƯỜNG
                                                         <div className="btn-list flex-nowrap">
-                                                            {/* Nút EDIT START */}
                                                             <button
                                                                 className="btn btn-icon btn-info-light"
                                                                 title="Chỉnh sửa thông tin"
@@ -670,34 +735,10 @@ export default function AdminUserManagement() {
                                                                     isActionDisabled
                                                                 }
                                                             >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    className="icon"
-                                                                    width="24"
-                                                                    height="24"
-                                                                    viewBox="0 0 24 24"
-                                                                    strokeWidth="2"
-                                                                    stroke="currentColor"
-                                                                    fill="none"
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                >
-                                                                    <path
-                                                                        stroke="none"
-                                                                        d="M0 0h24v24H0z"
-                                                                        fill="none"
-                                                                    ></path>
-                                                                    <path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3"></path>
-                                                                    <path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3"></path>
-                                                                    <line
-                                                                        x1="16"
-                                                                        y1="5"
-                                                                        x2="19"
-                                                                        y2="8"
-                                                                    ></line>
-                                                                </svg>
+                                                                <IconEdit
+                                                                    size={18}
+                                                                />
                                                             </button>
-                                                            {/* Nút Reset Password */}
                                                             <button
                                                                 className="btn btn-icon"
                                                                 title="Đặt lại Mật khẩu"
@@ -710,38 +751,10 @@ export default function AdminUserManagement() {
                                                                     isActionDisabled
                                                                 }
                                                             >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    className="icon"
-                                                                    width="24"
-                                                                    height="24"
-                                                                    viewBox="0 0 24 24"
-                                                                    strokeWidth="2"
-                                                                    stroke="currentColor"
-                                                                    fill="none"
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                >
-                                                                    <path
-                                                                        stroke="none"
-                                                                        d="M0 0h24v24H0z"
-                                                                        fill="none"
-                                                                    ></path>
-                                                                    <circle
-                                                                        cx="8"
-                                                                        cy="15"
-                                                                        r="4"
-                                                                    ></circle>
-                                                                    <line
-                                                                        x1="10.85"
-                                                                        y1="7.7"
-                                                                        x2="18"
-                                                                        y2="3"
-                                                                    ></line>
-                                                                    <path d="M18 6l-1.5 1.5"></path>
-                                                                </svg>
+                                                                <IconKey
+                                                                    size={18}
+                                                                />
                                                             </button>
-                                                            {/* Nút Khóa/Mở khóa */}
                                                             <button
                                                                 className={`btn btn-icon ${
                                                                     user.isActive
@@ -763,69 +776,17 @@ export default function AdminUserManagement() {
                                                                 }
                                                             >
                                                                 {user.isActive ? (
-                                                                    /* Icon Lock */ <svg
-                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                        className="icon"
-                                                                        width="24"
-                                                                        height="24"
-                                                                        viewBox="0 0 24 24"
-                                                                        strokeWidth="2"
-                                                                        stroke="currentColor"
-                                                                        fill="none"
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                    >
-                                                                        <path
-                                                                            stroke="none"
-                                                                            d="M0 0h24v24H0z"
-                                                                            fill="none"
-                                                                        ></path>
-                                                                        <rect
-                                                                            x="5"
-                                                                            y="11"
-                                                                            width="14"
-                                                                            height="10"
-                                                                            rx="2"
-                                                                        ></rect>
-                                                                        <circle
-                                                                            cx="12"
-                                                                            cy="16"
-                                                                            r="1"
-                                                                        ></circle>
-                                                                        <path d="M8 11v-4a4 4 0 0 1 8 0v4"></path>
-                                                                    </svg>
+                                                                    <IconLock
+                                                                        size={
+                                                                            20
+                                                                        }
+                                                                    />
                                                                 ) : (
-                                                                    /* Icon Unlock */ <svg
-                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                        className="icon"
-                                                                        width="24"
-                                                                        height="24"
-                                                                        viewBox="0 0 24 24"
-                                                                        strokeWidth="2"
-                                                                        stroke="currentColor"
-                                                                        fill="none"
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                    >
-                                                                        <path
-                                                                            stroke="none"
-                                                                            d="M0 0h24v24H0z"
-                                                                            fill="none"
-                                                                        ></path>
-                                                                        <rect
-                                                                            x="5"
-                                                                            y="11"
-                                                                            width="14"
-                                                                            height="10"
-                                                                            rx="2"
-                                                                        ></rect>
-                                                                        <circle
-                                                                            cx="12"
-                                                                            cy="16"
-                                                                            r="1"
-                                                                        ></circle>
-                                                                        <path d="M8 11v-3a4 4 0 0 1 7.237 -2.336"></path>
-                                                                    </svg>
+                                                                    <IconLockOpen
+                                                                        size={
+                                                                            20
+                                                                        }
+                                                                    />
                                                                 )}
                                                             </button>
                                                         </div>
@@ -838,7 +799,6 @@ export default function AdminUserManagement() {
                             </table>
                         </div>
 
-                        {/* Thanh Phân trang (Pagination) */}
                         <div className="card-footer d-flex align-items-center">
                             <p className="m-0 text-muted">
                                 Hiển thị từ{" "}
@@ -850,7 +810,6 @@ export default function AdminUserManagement() {
                                 trong tổng số {totalUsers} người dùng
                             </p>
 
-                            {/* Nút Phân trang */}
                             <ul className="pagination m-0 ms-auto">
                                 <li
                                     className={`page-item ${
@@ -868,25 +827,7 @@ export default function AdminUserManagement() {
                                                 setCurrentPage(currentPage - 1);
                                         }}
                                     >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="icon"
-                                            width="24"
-                                            height="24"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="2"
-                                            stroke="currentColor"
-                                            fill="none"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        >
-                                            <path
-                                                stroke="none"
-                                                d="M0 0h24v24H0z"
-                                                fill="none"
-                                            ></path>
-                                            <polyline points="15 6 9 12 15 18"></polyline>
-                                        </svg>
+                                        <IconChevronLeft size={16} />
                                     </a>
                                 </li>
                                 {Array.from({ length: totalPages }, (_, i) => (
@@ -930,25 +871,7 @@ export default function AdminUserManagement() {
                                                 setCurrentPage(currentPage + 1);
                                         }}
                                     >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="icon"
-                                            width="24"
-                                            height="24"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="2"
-                                            stroke="currentColor"
-                                            fill="none"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        >
-                                            <path
-                                                stroke="none"
-                                                d="M0 0h24v24H0z"
-                                                fill="none"
-                                            ></path>
-                                            <polyline points="9 6 15 12 9 18"></polyline>
-                                        </svg>
+                                        <IconChevronRight size={16} />
                                     </a>
                                 </li>
                             </ul>
@@ -956,7 +879,6 @@ export default function AdminUserManagement() {
                     </div>
                 </div>
             </div>
-            {/* MODAL */}
             <ResetPasswordModal
                 show={!!resetModalUser}
                 onClose={() => setResetModalUser(null)}
@@ -966,6 +888,13 @@ export default function AdminUserManagement() {
                 api={api}
                 refetchUsers={fetchUsers}
             />
+            {showAddUserModal && (
+                <AddUserModal
+                    show={showAddUserModal}
+                    onClose={() => setShowAddUserModal(false)}
+                    fetchUsers={fetchUsers}
+                />
+            )}
         </div>
     );
 }

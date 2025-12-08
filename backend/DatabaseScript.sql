@@ -184,6 +184,26 @@ CREATE TABLE ContactMessages (
   FOREIGN KEY (userRepliedId) REFERENCES User(id)
 );
 
+CREATE TABLE FAQCategory (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    categoryName VARCHAR(100) NOT NULL, -- Tên danh mục (Ví dụ: Đặt tour, Thanh toán)
+    categoryOrder INT DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- TẠO BẢNG CÂU HỎI VÀ TRẢ LỜI (FAQ)
+CREATE TABLE FAQ (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    categoryId INT,
+    question VARCHAR(500) NOT NULL,
+    answer TEXT NOT NULL,
+    faqOrder INT DEFAULT 0,
+    isPublished BOOLEAN DEFAULT TRUE,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (categoryId) REFERENCES FAQCategory(id)
+);
+
 INSERT INTO Page (name, description) VALUES ('LandingPage', 'Trang chủ của BK Tours');
 -- SECTION 1: why_choose_us
 INSERT INTO Section 
@@ -392,3 +412,31 @@ VALUES
 (2, 'SupportAgent', 'Hỗ trợ nhanh 24/7', 'Đồng hành suốt chuyến đi', NULL, 'Đội ngũ hỗ trợ luôn sẵn sàng giải đáp mọi thắc mắc.', '#ed6c02'),
 
 (2, 'ThumbUp', 'Trải nghiệm tối ưu', 'Được khách hàng tin chọn', NULL, 'Cam kết mang lại trải nghiệm du lịch tốt nhất với dịch vụ chuyên nghiệp.', '#9c27b0');
+
+INSERT INTO FAQCategory (categoryName, categoryOrder) VALUES
+('Đặt Tour & Chính sách', 1),
+('Thanh toán & Bảo hiểm', 2),
+('Hỗ trợ trong chuyến đi', 3);
+
+-- Lấy IDs của các Category mới
+SET @BOOKING_CAT_ID = (SELECT id FROM FAQCategory WHERE categoryName = 'Đặt Tour & Chính sách');
+SET @PAYMENT_CAT_ID = (SELECT id FROM FAQCategory WHERE categoryName = 'Thanh toán & Bảo hiểm');
+SET @SUPPORT_CAT_ID = (SELECT id FROM FAQCategory WHERE categoryName = 'Hỗ trợ trong chuyến đi');
+
+-- CHÈN DỮ LIỆU MẪU CHO BẢNG FAQ (Sử dụng các ID vừa tạo)
+INSERT INTO FAQ (question, answer, categoryId, faqOrder) VALUES
+('Quy trình đặt tour trực tuyến diễn ra như thế nào?', 
+ 'Bạn chỉ cần chọn tour, ngày khởi hành, số lượng khách và tiến hành thanh toán qua cổng thanh toán được tích hợp. Xác nhận sẽ được gửi qua email.', 
+ @BOOKING_CAT_ID, 1),
+
+('Tôi có thể hủy hoặc thay đổi tour đã đặt không?', 
+ 'Việc hủy/thay đổi phụ thuộc vào chính sách của từng tour. Vui lòng kiểm tra kỹ chính sách hủy tour cụ thể trước khi thanh toán.', 
+ @BOOKING_CAT_ID, 2),
+ 
+('Giá tour đã bao gồm phí bảo hiểm du lịch chưa?', 
+ 'Giá hiển thị trên website chưa bao gồm phí bảo hiểm. Tuy nhiên, chúng tôi cung cấp tùy chọn mua bảo hiểm du lịch bổ sung ngay tại bước thanh toán.', 
+ @PAYING_CAT_ID, 1), 
+
+('Làm sao để liên hệ hỗ trợ khẩn cấp trong chuyến đi?', 
+ 'Bạn có thể gọi hotline 24/7 của chúng tôi được in trên vé điện tử. Đội ngũ hỗ trợ luôn sẵn sàng giúp đỡ bạn.', 
+ @SUPPORT_CAT_ID, 1);

@@ -88,7 +88,6 @@ class UserModel extends Database
 
             $stmt = $this->db->prepare($sql);
 
-            // Bind tham số
             $stmt->bindParam(':fullName',   $data['fullName']);
             $stmt->bindParam(':avatarUrl',  $data['avatarUrl']);
             $stmt->bindParam(':email',      $data['email']);
@@ -132,12 +131,10 @@ class UserModel extends Database
             foreach ($searchTerms as $term) {
                 if (empty($term)) continue;
 
-                // Tạo key UNIQUE riêng cho từng field
                 $fullNameKey = ":fullName$i";
                 $emailKey    = ":email$i";
                 $phoneKey    = ":phone$i";
 
-                // Bind từng param
                 $executeParams[$fullNameKey] = "%$term%";
                 $executeParams[$emailKey]    = "%$term%";
                 $executeParams[$phoneKey]    = "%$term%";
@@ -156,7 +153,6 @@ class UserModel extends Database
             }
         }
 
-        // merge conditions
         if (!empty($conditions)) {
             $sql .= " AND " . implode(" AND ", $conditions);
         }

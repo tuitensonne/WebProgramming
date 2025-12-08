@@ -98,4 +98,5 @@ class AuthController extends Controller
             return $this->error('Login failed', 500, $e->getMessage());
         }
     }
+    
 }
