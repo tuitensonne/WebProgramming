@@ -78,4 +78,22 @@ class CommentPostController extends Controller
             return $this->error('Error liking comment', 500, $e->getMessage());
         }
     }
+
+    /**
+     * DELETE /admin/posts/{postId}/comments/{commentId}
+     * Xóa comment của người dùng (admin only)
+     */
+    public function deleteComment($postId, $commentId)
+    {
+        try {
+            $success = $this->commentPostModel->deleteComment((int)$commentId);
+            if ($success) {
+                return $this->success(null, 'Comment deleted successfully');
+            } else {
+                return $this->error('Failed to delete comment', 500);
+            }
+        } catch (\Exception $e) {
+            return $this->error('Error deleting comment', 500, $e->getMessage());
+        }
+    }
 }

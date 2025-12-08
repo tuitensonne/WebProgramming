@@ -88,3 +88,19 @@ CREATE TABLE CommentPost (
     FOREIGN KEY (userId) REFERENCES User(id),
     FOREIGN KEY (postId) REFERENCES Post(id)
 );
+
+INSERT INTO CommentPost (userId, postId, content, likes, createdAt)
+VALUES
+(1, 9, 'Bài viết này quá tuyệt vời! Mình rất thích.', 3, NOW() - INTERVAL 1 DAY),
+(2, 9, 'Cảm ơn bạn đã chia sẻ, thông tin rất hữu ích.', 1, NOW() - INTERVAL 2 DAY),
+(3, 9, 'Hình ảnh đẹp quá, muốn đi ngay luôn!', 5, NOW() - INTERVAL 3 DAY),
+
+(5, 10, 'Mình từng đến đây rồi, đúng là tuyệt vời như bài viết mô tả.', 4, NOW() - INTERVAL 4 DAY),
+(6, 10, 'Bài viết khá chi tiết, cảm ơn bạn!', 2, NOW() - INTERVAL 5 DAY),
+
+(3, 11, 'Nhìn ảnh đẹp quá, bạn chụp bằng máy gì vậy?', 6, NOW() - INTERVAL 6 DAY),
+(1, 11, 'Thông tin rõ ràng, dễ hiểu. Rất thích!', 2, NOW() - INTERVAL 7 DAY),
+(2, 11, 'Chỗ này đi mùa nào đẹp nhất bạn?', 1, NOW() - INTERVAL 8 DAY),
+
+(3, 8, 'Mình sẽ lưu lại bài này để lên kế hoạch đi.', 9, NOW() - INTERVAL 9 DAY),
+(1, 8, 'Bài viết tâm huyết, cảm ơn tác giả nhiều!', 3, NOW() - INTERVAL 10 DAY);

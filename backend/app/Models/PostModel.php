@@ -184,4 +184,97 @@ class PostModel
             return null;
         }
     }
+
+    /**
+     * Create a new post
+     */
+    public function createPost(array $data): ?int
+    {
+        try {
+            $query = "
+                INSERT INTO Post (title, description, location, readTime, thumbnailUrl, createdAt, updatedAt, authorId)
+                VALUES (:title, :description, :location, :readTime, :thumbnailUrl, NOW(), NOW(), :authorId)
+            ";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(':title', $data['title'] ?? '', PDO::PARAM_STR);
+            $stmt->bindValue(':description', $data['description'] ?? '', PDO::PARAM_STR);
+            $stmt->bindValue(':location', $data['location'] ?? '', PDO::PARAM_STR);
+            $stmt->bindValue(':readTime', $data['readTime'] ?? 5, PDO::PARAM_INT);
+            $stmt->bindValue(':thumbnailUrl', $data['thumbnailUrl'] ?? '', PDO::PARAM_STR);
+            $stmt->bindValue(':authorId', $data['authorId'] ?? 1, PDO::PARAM_INT);
+            
+            if ($stmt->execute()) {
+                return (int)$this->db->lastInsertId();
+            }
+            return null;
+        } catch (PDOException $e) {
+            error_log("Error creating post: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Update an existing post
+     */
+    public function updatePost(int $id, array $data): bool
+    {
+        try {
+            $updates = [];
+            $params = [':id' => $id];
+
+            if (isset($data['title'])) {
+                $updates[] = "title = :title";
+                $params[':title'] = $data['title'];
+            }
+            if (isset($data['description'])) {
+                $updates[] = "description = :description";
+                $params[':description'] = $data['description'];
+            }
+            if (isset($data['location'])) {
+                $updates[] = "location = :location";
+                $params[':location'] = $data['location'];
+            }
+            if (isset($data['readTime'])) {
+                $updates[] = "readTime = :readTime";
+                $params[':readTime'] = (int)$data['readTime'];
+            }
+            if (isset($data['thumbnailUrl'])) {
+                $updates[] = "thumbnailUrl = :thumbnailUrl";
+                $params[':thumbnailUrl'] = $data['thumbnailUrl'];
+            }
+
+            if (empty($updates)) {
+                return false;
+            }
+
+            $updates[] = "updatedAt = NOW()";
+            $query = "UPDATE Post SET " . implode(", ", $updates) . " WHERE id = :id";
+            
+            $stmt = $this->db->prepare($query);
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+            
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error updating post: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Delete a post
+     */
+    public function deletePost(int $id): bool
+    {
+        try {
+            $query = "DELETE FROM Post WHERE id = :id";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error deleting post: " . $e->getMessage());
+            return false;
+        }
+    }
 }

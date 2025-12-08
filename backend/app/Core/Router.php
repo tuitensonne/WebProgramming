@@ -33,6 +33,11 @@ class Router {
             $uri = substr($uri, strlen($this->basePath));
         }
 
+        // Remove index.php from URI if present
+        if (str_starts_with($uri, '/index.php')) {
+            $uri = substr($uri, strlen('/index.php'));
+        }
+
         if (empty($uri)) $uri = '/';
 
         if (isset($this->routes[$method][$uri])) {

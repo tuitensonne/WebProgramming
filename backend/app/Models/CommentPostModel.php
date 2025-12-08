@@ -71,4 +71,20 @@ class CommentPostModel
             return false;
         }
     }
+
+    /**
+     * Delete a comment by ID
+     */
+    public function deleteComment(int $commentId): bool
+    {
+        try {
+            $sql = "DELETE FROM CommentPost WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':id', $commentId, PDO::PARAM_INT);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error deleting comment $commentId: " . $e->getMessage());
+            return false;
+        }
+    }
 }

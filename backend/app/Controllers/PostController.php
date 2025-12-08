@@ -86,4 +86,85 @@ class PostController extends Controller
             return $this->error('Failed to fetch regions', 500, $e->getMessage());
         }
     }
-}
+
+    /**
+     * Create a new post (POST /admin/posts)
+     */
+    public function createPost()
+    {
+        try {
+            $data = $this->getJsonBody();
+
+            if (empty($data['title'])) {
+                return $this->error('Title is required', 400);
+            }
+
+            $postId = $this->postModel->createPost($data);
+            if (!$postId) {
+                return $this->error('Failed to create post', 500);
+            }
+
+            $post = $this->postModel->getPostById($postId);
+            return $this->success($post, 'Post created successfully', 201);
+        } catch (\Exception $e) {
+            return $this->error('Failed to create post', 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Update a post (PUT /admin/posts/{id})
+     */
+    public function updatePost($id)
+    {
+        try {
+            if (!$id || !is_numeric($id)) {
+                return $this->error('Invalid post ID', 400);
+            }
+
+            $post = $this->postModel->getPostById((int)$id);
+            if (!$post) {
+                return $this->error('Post not found', 404);
+            }
+
+            $data = $this->getJsonBody();
+            if (empty($data)) {
+                return $this->error('No data provided', 400);
+            }
+
+            $result = $this->postModel->updatePost((int)$id, $data);
+            if (!$result) {
+                return $this->error('Failed to update post', 500);
+            }
+
+            $updatedPost = $this->postModel->getPostById((int)$id);
+            return $this->success($updatedPost, 'Post updated successfully');
+        } catch (\Exception $e) {
+            return $this->error('Failed to update post', 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete a post (DELETE /admin/posts/{id})
+     */
+    public function deletePost($id)
+    {
+        try {
+            if (!$id || !is_numeric($id)) {
+                return $this->error('Invalid post ID', 400);
+            }
+
+            $post = $this->postModel->getPostById((int)$id);
+            if (!$post) {
+                return $this->error('Post not found', 404);
+            }
+
+            $result = $this->postModel->deletePost((int)$id);
+            if (!$result) {
+                return $this->error('Failed to delete post', 500);
+            }
+
+            return $this->success(null, 'Post deleted successfully');
+        } catch (\Exception $e) {
+            return $this->error('Failed to delete post', 500, $e->getMessage());
+        }
+    }
