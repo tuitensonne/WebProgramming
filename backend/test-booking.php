@@ -5,6 +5,7 @@
  */
 
 require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/app/Core/Autoloader.php';
 
 use App\Core\Database;
 use App\Models\BookingModel;
@@ -12,6 +13,11 @@ use App\Models\BookingModel;
 // Load environment variables
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
+
+// Ensure fallback loader sets env (some CLI contexts may not load Dotenv properly)
+require_once __DIR__ . '/app/config/env.php';
+loadEnv(__DIR__ . '/.env');
+echo "Loaded env from: " . __DIR__ . '/.env' . "\n";
 
 try {
     echo "Testing Booking Model...\n\n";

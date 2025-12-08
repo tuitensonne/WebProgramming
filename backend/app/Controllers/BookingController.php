@@ -306,12 +306,11 @@ class BookingController extends Controller {
         error_log('Token (first 20 chars): ' . substr($token, 0, 20) . '...');
 
         try {
-            // Use JWT service to decode token
-            $jwtService = new \App\Services\JwtService();
-            $decoded = $jwtService->decode($token);
-            $userId = $decoded->userId ?? null;
+            // Use JwtService singleton to decode/verify token
+            $jwtService = \App\Services\JwtService::getInstance();
+            $userId = $jwtService->getUserId($token);
             error_log('Decoded userId: ' . ($userId ? $userId : 'null'));
-            return $userId;
+            return $userId ?: null;
         } catch (\Exception $e) {
             error_log('Error decoding token: ' . $e->getMessage());
             return null;
