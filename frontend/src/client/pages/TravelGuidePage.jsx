@@ -214,7 +214,7 @@ export default function TravelGuidePage() {
         </Box>
 
         {/* Posts Grid */}
-        {guides.length === 0 ? (
+        {!loading && guides.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 6 }}>
             <Typography variant="body1" sx={{ color: "text.secondary" }}>
               Chưa có cẩm nang nào phù hợp với tiêu chí tìm kiếm.
